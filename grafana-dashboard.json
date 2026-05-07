@@ -74,7 +74,7 @@
       "title": "上传成功率",
       "targets": [
         {
-          "expr": "sum(rate(xmind_uploads_total{status=\"success\"}[5m])) / sum(rate(xmind_uploads_total[5m]))",
+          "expr": "sum(rate(xmind_conversions_total{status="success"}[5m])) / sum(rate(xmind_conversions_total[5m]))",
           "legendFormat": "成功率"
         }
       ],
