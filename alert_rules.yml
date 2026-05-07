@@ -1,0 +1,126 @@
+groups:
+- name: xmind-to-md
+  rules:
+  # ==================== 服务可用性告警 ====================
+  
+  # 服务宕机告警
+  - alert: XMindServiceDown
+    expr: up{job="xmind-to-md"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: xmind-to-md
+    annotations:
+      summary: "XMind 转 Markdown 服务宕机"
+      description: "服务 {{ $labels.instance }} 已宕机超过 1 分钟，请立即检查！"
+
+  # 服务响应慢告警
+  - alert: XMindHighLatency
+    expr: histogram_quantile(0.99, rate(xmind_request_duration_seconds_bucket[5m])) > 5
+    for: 2m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "XMind 服务响应延迟过高"
+      description: "P99 请求延迟超过 5 秒，当前值: {{ $value }}s"
+
+  # ==================== 上传相关告警 ====================
+  
+  # 上传失败率高
+  - alert: XMindUploadFailureRateHigh
+    expr: |
+      (
+        sum(rate(xmind_uploads_total{status="failed"}[5m])) 
+        / 
+        sum(rate(xmind_uploads_total[5m]))
+      ) > 0.1
+    for: 2m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "上传失败率过高"
+      description: "上传失败率超过 10%，当前值: {{ $value | humanizePercentage }}"
+
+  # 上传文件过大告警
+  - alert: XMindLargeUpload
+    expr: histogram_quantile(0.95, rate(xmind_upload_size_bytes_bucket[5m])) > 52428800
+    for: 5m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "检测到超大文件上传"
+      description: "P95 上传文件大小超过 50MB，当前值: {{ $value | humanize1024 }}B"
+
+  # ==================== 转换相关告警 ====================
+  
+  # 转换失败率高
+  - alert: XMindConversionFailureRateHigh
+    expr: |
+      (
+        sum(rate(xmind_conversions_total{status="failed"}[5m])) 
+        / 
+        sum(rate(xmind_conversions_total[5m]))
+      ) > 0.05
+    for: 3m
+    labels:
+      severity: critical
+      service: xmind-to-md
+    annotations:
+      summary: "文件转换失败率过高"
+      description: "转换失败率超过 5%，当前值: {{ $value | humanizePercentage }}"
+
+  # 转换耗时过长
+  - alert: XMindConversionSlow
+    expr: histogram_quantile(0.99, rate(xmind_conversion_duration_seconds_bucket[5m])) > 30
+    for: 5m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "文件转换耗时过长"
+      description: "P99 转换耗时超过 30 秒，当前值: {{ $value }}s"
+
+  # ==================== 磁盘/存储告警 ====================
+  
+  # 临时文件过多
+  - alert: XMindTempFilesHigh
+    expr: xmind_temp_files > 1000
+    for: 10m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "临时文件数量过多"
+      description: "临时文件数量超过 1000，当前值: {{ $value }}，建议清理"
+
+  # 磁盘空间不足
+  - alert: XMindDiskSpaceLow
+    expr: |
+      (
+        xmind_disk_usage_bytes{type="temp"} 
+        + 
+        xmind_disk_usage_bytes{type="output"}
+      ) > 10737418240
+    for: 5m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "磁盘空间使用过高"
+      description: "总磁盘使用超过 10GB，当前值: {{ $value | humanize1024 }}B"
+
+  # ==================== 请求量异常告警 ====================
+  
+  # 请求量突增（可能是攻击或爬虫）
+  - alert: XMindRequestSpike
+    expr: rate(xmind_requests_total[5m]) > 100
+    for: 2m
+    labels:
+      severity: warning
+      service: xmind-to-md
+    annotations:
+      summary: "请求量异常突增"
+      description: "每秒请求量超过 100，当前值: {{ $value | humanize }}/s，可能存在异常访问"

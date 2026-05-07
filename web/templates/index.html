@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XMind 转换工具 - Web版</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1><i class="fas fa-exchange-alt"></i> XMind 转换工具</h1>
+                    <p class="subtitle">支持 XMind ↔ Markdown/Word/大纲 双向转换</p>
+                </div>
+                <div class="header-right">
+                    <button class="btn btn-outline" onclick="showConfigModal()">
+                        <i class="fas fa-cog"></i> 设置
+                    </button>
+                    <button class="btn btn-outline" onclick="showTempFilesModal()">
+                        <i class="fas fa-folder-open"></i> 临时文件
+                    </button>
+                    <button class="btn btn-outline" onclick="showOutputFilesModal()">
+                        <i class="fas fa-file-export"></i> 输出文件
+                    </button>
+                    <button class="btn btn-outline" onclick="showHelpModal()">
+                        <i class="fas fa-question-circle"></i> 帮助
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+        <!-- 模式切换标签 -->
+        <div class="mode-tabs">
+            <button class="tab-btn active" data-mode="forward" onclick="switchMode('forward', event)">
+                <i class="fas fa-arrow-right"></i> XMind → 其他格式
+            </button>
+            <button class="tab-btn" data-mode="reverse" onclick="switchMode('reverse', event)">
+                <i class="fas fa-arrow-left"></i> 其他格式 → XMind
+            </button>
+        </div>
+            
+            <!-- 左侧：上传和配置 -->
+            <div class="left-panel">
+                <!-- 文件上传区域 -->
+                <div class="card">
+                    <h2><i class="fas fa-upload"></i> 上传文件</h2>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                        <p id="uploadHint">拖拽 XMind 文件到此处，或点击选择文件</p>
+                        <input type="file" id="fileInput" accept=".xmind" hidden>
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open"></i> 选择文件
+                        </button>
+                    </div>
+                    <div id="fileInfo" class="file-info" style="display: none;">
+                        <p><i class="fas fa-file"></i> <span id="fileName"></span></p>
+                        <p><i class="fas fa-layer-group"></i> Sheet 数量: <span id="sheetCount"></span></p>
+                        <button class="btn btn-secondary" onclick="resetFile()">
+                            <i class="fas fa-times"></i> 重新选择
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sheet 选择 -->
+                <div class="card" id="sheetSection" style="display: none;">
+                    <h2><i class="fas fa-th"></i> 选择 Sheet</h2>
+                    <div class="sheet-list" id="sheetList"></div>
+                    <div class="select-actions">
+                        <button class="btn btn-sm" onclick="selectAllSheets()">
+                            <i class="fas fa-check-square"></i> 全选
+                        </button>
+                        <button class="btn btn-sm" onclick="deselectAllSheets()">
+                            <i class="fas fa-square"></i> 取消全选
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 导出格式选择 -->
+                <div class="card" id="formatSection" style="display: none;">
+                    <h2><i class="fas fa-file-export"></i> 导出格式</h2>
+                    <div class="format-options">
+                        <label class="format-option">
+                            <input type="checkbox" value="md" checked>
+                            <span class="format-label">
+                                <i class="fab fa-markdown"></i> Markdown (.md)
+                            </span>
+                        </label>
+                        <label class="format-option">
+                            <input type="checkbox" value="docx">
+                            <span class="format-label">
+                                <i class="fas fa-file-word"></i> Word (.docx)
+                            </span>
+                        </label>
+                        <label class="format-option">
+                            <input type="checkbox" value="outline">
+                            <span class="format-label">
+                                <i class="fas fa-list-alt"></i> 大纲 (.txt)
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 转换按钮（正向） -->
+                <div class="card" id="convertSection" style="display: none;">
+                    <button class="btn btn-success btn-lg btn-block" onclick="convertFile()">
+                        <i class="fas fa-cogs"></i> 开始转换
+                    </button>
+                </div>
+                
+                <!-- 反向转换区域 -->
+                <div class="card" id="reverseSection" style="display: none;">
+                    <h2><i class="fas fa-file-import"></i> 选择源格式</h2>
+                    <div class="format-options">
+                        <label class="format-option">
+                            <input type="radio" name="sourceFormat" value="md" checked>
+                            <span class="format-label">
+                                <i class="fab fa-markdown"></i> Markdown (.md)
+                            </span>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="sourceFormat" value="docx">
+                            <span class="format-label">
+                                <i class="fas fa-file-word"></i> Word (.docx)
+                            </span>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="sourceFormat" value="outline">
+                            <span class="format-label">
+                                <i class="fas fa-list-alt"></i> 大纲 (.txt)
+                            </span>
+                        </label>
+                    </div>
+                    <button class="btn btn-success btn-lg btn-block" onclick="reverseConvert()" style="margin-top: 15px;">
+                        <i class="fas fa-exchange-alt"></i> 反向转换
+                    </button>
+                </div>
+            </div>
+
+            <!-- 右侧：预览和结果 -->
+            <div class="right-panel">
+                <!-- 预览区域 -->
+                <div class="card" id="previewSection" style="display: none;">
+                    <h2><i class="fas fa-eye"></i> 文件预览</h2>
+                    <div class="preview-controls">
+                        <label>选择要预览的 Sheet:</label>
+                        <select id="previewSheetSelect" onchange="previewFile()">
+                        </select>
+                    </div>
+                    <div class="preview-content" id="previewContent">
+                        <p class="placeholder-text">加载中...</p>
+                    </div>
+                </div>
+
+                <!-- 转换结果 -->
+                <div class="card" id="resultSection" style="display: none;">
+                    <h2><i class="fas fa-check-circle"></i> 转换结果</h2>
+                    <div id="resultContent"></div>
+                    <div class="download-actions" id="downloadActions"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 配置弹窗 -->
+        <div class="modal" id="configModal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-cog"></i> 系统设置</h2>
+                    <button class="btn-close" onclick="closeConfigModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="config-section">
+                        <h3>临时文件保留策略</h3>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="autoCleanup" checked>
+                                启用自动清理
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>保留时间（小时）</label>
+                            <input type="number" id="retentionHours" value="24" min="1" max="168">
+                            <span class="form-hint">超过此时间的临时文件将被自动清理</span>
+                        </div>
+                        <div class="form-group">
+                            <label>最大文件数量</label>
+                            <input type="number" id="maxFileCount" value="100" min="10" max="1000">
+                            <span class="form-hint">超过此数量的旧文件将被清理</span>
+                        </div>
+                        <div class="form-group">
+                            <label>最大文件大小（MB）</label>
+                            <input type="number" id="maxFileSize" value="100" min="10" max="1000">
+                            <span class="form-hint">超过此大小的文件将被优先清理</span>
+                        </div>
+                        <div class="form-group">
+                            <label>清理间隔（分钟）</label>
+                            <input type="number" id="cleanupInterval" value="60" min="5" max="1440">
+                            <span class="form-hint">自动清理的检查间隔</span>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="cleanupOnStartup">
+                                启动时清理
+                            </label>
+                        </div>
+                    </div>
+                    <div class="config-section">
+                        <h3>上传设置</h3>
+                        <div class="form-group">
+                            <label>最大上传文件大小（MB）</label>
+                            <input type="number" id="maxUploadSize" value="100" min="1" max="500">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeConfigModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveConfig()">
+                        <i class="fas fa-save"></i> 保存设置
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 临时文件管理弹窗 -->
+        <div class="modal" id="tempFilesModal" style="display: none;">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h2><i class="fas fa-folder-open"></i> 临时文件管理</h2>
+                    <button class="btn-close" onclick="closeTempFilesModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="temp-stats" id="tempStats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="tempFileCount">-</span>
+                            <span class="stat-label">文件数量</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="tempTotalSize">-</span>
+                            <span class="stat-label">总大小</span>
+                        </div>
+                    </div>
+                    <div class="temp-files-list" id="tempFilesList">
+                        <p class="placeholder-text">加载中...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeTempFilesModal()">关闭</button>
+                    <button class="btn btn-danger" onclick="cleanupTempFiles()">
+                        <i class="fas fa-trash"></i> 立即清理
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输出文件管理弹窗 -->
+        <div class="modal" id="outputFilesModal" style="display: none;">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h2><i class="fas fa-file-export"></i> 输出文件管理</h2>
+                    <button class="btn-close" onclick="closeOutputFilesModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="temp-stats" id="outputStats">
+                        <div class="stat-item">
+                            <span class="stat-value" id="outputFileCount">-</span>
+                            <span class="stat-label">文件数量</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value" id="outputTotalSize">-</span>
+                            <span class="stat-label">总大小</span>
+                        </div>
+                    </div>
+                    <div class="temp-files-list" id="outputFilesList">
+                        <p class="placeholder-text">加载中...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeOutputFilesModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载动画 -->
+        <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+            <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p id="loadingText">正在处理，请稍候...</p>
+                <div class="progress-bar" id="progressBar" style="display: none;">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 帮助弹窗 -->
+        <div class="modal" id="helpModal" style="display: none;">
+            <div class="modal-content modal-lg">
+                <div class="modal-header">
+                    <h2><i class="fas fa-question-circle"></i> 使用帮助</h2>
+                    <button class="btn-close" onclick="closeHelpModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-section">
+                        <h3><i class="fas fa-arrow-right"></i> 正向转换（XMind → 其他格式）</h3>
+                        <ol>
+                            <li>点击<strong>"XMind → 其他格式"</strong>标签</li>
+                            <li>上传 <code>.xmind</code> 文件</li>
+                            <li>选择要导出的 <strong>Sheet</strong></li>
+                            <li>选择<strong>导出格式</strong>（Markdown、Word、大纲）</li>
+                            <li>点击<strong>"开始转换"</strong></li>
+                            <li>下载转换后的文件</li>
+                        </ol>
+                    </div>
+                    <div class="help-section">
+                        <h3><i class="fas fa-arrow-left"></i> 反向转换（其他格式 → XMind）</h3>
+                        <ol>
+                            <li>点击<strong>"其他格式 → XMind"</strong>标签</li>
+                            <li>上传 <code>.md</code>、<code>.docx</code> 或 <code>.txt</code> 文件</li>
+                            <li>选择<strong>源格式</strong></li>
+                            <li>点击<strong>"反向转换"</strong></li>
+                            <li>下载生成的 <code>.xmind</code> 文件</li>
+                        </ol>
+                    </div>
+                    <div class="help-section">
+                        <h3><i class="fas fa-cog"></i> 配置管理</h3>
+                        <ul>
+                            <li>点击右上角<strong>"设置"</strong>按钮</li>
+                            <li>设置临时文件保留策略</li>
+                            <li>设置自动清理规则</li>
+                            <li>配置自动保存到 <code>config.json</code></li>
+                        </ul>
+                    </div>
+                    <div class="help-section">
+                        <h3><i class="fas fa-folder-open"></i> 临时文件管理</h3>
+                        <ul>
+                            <li>点击右上角<strong>"临时文件"</strong>按钮</li>
+                            <li>查看临时文件列表和大小</li>
+                            <li>手动清理过期或所有文件</li>
+                        </ul>
+                    </div>
+                    <div class="help-section">
+                        <h3><i class="fas fa-info-circle"></i> 格式说明</h3>
+                        <table class="help-table">
+                            <tr>
+                                <th>源格式</th>
+                                <th>转换规则</th>
+                            </tr>
+                            <tr>
+                                <td><strong>Markdown</strong></td>
+                                <td><code># 标题</code> → 一级节点，<code>## 标题</code> → 二级节点</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Word</strong></td>
+                                <td><code>Heading 1</code> → 一级节点，<code>Heading 2</code> → 二级节点</td>
+                            </tr>
+                            <tr>
+                                <td><strong>大纲</strong></td>
+                                <td>缩进级别 → 父子关系，项目符号 → 节点标记</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="closeHelpModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <footer class="footer">
+            <p>XMind 转换工具 v1.0 &copy; 2024 | 支持双向转换 | 
+                <a href="javascript:void(0)" onclick="showHelpModal()">使用帮助</a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

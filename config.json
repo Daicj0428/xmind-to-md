@@ -1,0 +1,11 @@
+{
+  "temp_policy": {
+    "auto_cleanup": true,
+    "retention_hours": 24,
+    "max_file_size_mb": 100,
+    "max_file_count": 100,
+    "cleanup_on_startup": true,
+    "cleanup_interval_minutes": 60
+  },
+  "max_upload_size_mb": 100
+}

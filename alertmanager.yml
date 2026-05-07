@@ -1,0 +1,43 @@
+global:
+  smtp_smarthost: 'smtp.qiye.163.com:465'   # 协议
+  smtp_require_tls: true
+  smtp_from: '发件人信息 姓名<邮箱地址>'
+  smtp_auth_username: '发件人邮箱地址'
+  smtp_auth_password: 'SMTP授权码'
+
+route:
+  receiver: 'email-notice'
+  group_by: ['alertname', 'severity', 'service']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  # 子路由：根据严重性分级处理
+  routes:
+    - match:
+        severity: critical
+      receiver: 'email-notice'
+      continue: true
+    - match:
+        severity: warning
+      receiver: 'email-notice'
+
+receivers:
+- name: 'email-notice'
+  email_configs:
+  - to: '收件人邮箱'
+    send_resolved: true
+    headers:
+      Subject: '[XMind-MD告警] {{ .GroupLabels.alertname }}'
+    html: |
+      <h2>XMind 转 Markdown 服务告警</h2>
+      <p><strong>告警状态:</strong> {{ .Status }}</p>
+      <p><strong>告警名称:</strong> {{ .GroupLabels.alertname }}</p>
+      <p><strong>严重级别:</strong> {{ .GroupLabels.severity }}</p>
+      <hr>
+      {{ range .Alerts }}
+      <p><strong>实例:</strong> {{ .Labels.instance }}</p>
+      <p><strong>描述:</strong> {{ .Annotations.description }}</p>
+      <p><strong>摘要:</strong> {{ .Annotations.summary }}</p>
+      <p><strong>开始时间:</strong> {{ .StartsAt.Format "2006-01-02 15:04:05" }}</p>
+      <hr>
+      {{ end }}
