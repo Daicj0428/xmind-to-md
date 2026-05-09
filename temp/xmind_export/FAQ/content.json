@@ -1,0 +1,1232 @@
+[
+  {
+    "id": "b3eca955-810c-41e1-8c46-b0b31d424018",
+    "title": "FAQ",
+    "rootTopic": {
+      "id": "efd69ce6-c2f8-452f-b317-27aecb34cce3",
+      "title": "程序自带的测试工具",
+      "notes": {
+        "plain": {
+          "content": "从0.2.0版本开始新增了命令测试的工具用于排查问题，proxy和agent用法一样。   \n可通过下面命令查看当前版本支持的测试命令\n\n```shell\njava -jar snc-ng-proxy*.jar cmd help\n```\n\n使用测试命令，cmd是必填\n\n```shell\n# 查询安装包信息\njava -jar snc-ng-proxy*.jar cmd version\n# 查看当前程序配置文件的配置项说明\njava -jar snc-ng-proxy*.jar cmd configDesc\n# 查看当前程序支持的监控项\njava -jar snc-ng-proxy*.jar cmd metricKeyDesc\n# 测试监控项采集，注意windows系统不能使用单引号括注参数，`process.cpu`为对应的监控项key值\njava -jar snc-ng-proxy*.jar cmd 'metric=process.cpu' host=proxyIp:monitorPort\n# 测试本地命令，如果参数值有空格，参数名和参数值要用单引号括起来\njava -jar snc-ng-proxy*.jar cmd 'commandTest=echo hello'\n```"
+        }
+      },
+      "children": {
+        "attached": [
+          {
+            "id": "209ed014-a731-4fad-83df-9c1095c289ee",
+            "title": "常见问题解决",
+            "children": {
+              "attached": [
+                {
+                  "id": "88baaa86-b27f-4518-ab06-886f3344e910",
+                  "title": "**重点说明**\n1. 如果遇到问题需要技术人员协助的，请先按第3点尝试找相关的日志后再联系技术人员协助。\n2. snc-ng-proxy与snc-ng-agent绝大部分功能是一样的，所以proxy和agent的问题排查方式也基本是一样的。\n3. 如果遇到问题，请先查看对应服务的日志：\n   1. 用proxy跑的功能就看proxy的日志。\n   2. 用agent跑的功能先看agent日志，agent没问题就再看proxy的日志。\n   3. 如果agent和proxy都没找到可疑的日志，就到功能失败对应的微服务下找可疑的日志。\n4. 如果问题的错误提示包含了`FAQ:xxx`关键字，`xxx`为问题编号，可以在本文档搜索编号找对应的解决方法。\n5. snc-ng-proxy和snc-ng-agent的功能基本一样，所以相同的功能，配置也是通用的，proxy配置固定以`proxy.`开头，agent配置固定以`agent.`开头。"
+                },
+                {
+                  "id": "4feceed0-5044-4d1c-b269-c6b3520b20cf",
+                  "title": "一、插件已安装，但前端没看到有注册上来（错误码：13005）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "90a3c958-6ac9-4c2d-8c86-5902af12f393",
+                        "title": "1. 确定plugin.json插件描述文件的pluginEnglishName的值写代码里的一致。\n2. 确定plugin.json插件描述文件的schedulable的值与插件的类型一致，true为执行插件ExecutablePlugin的子类，false为常驻型插件BackgroundPlugin的子类。\n3. 开启DEBUG或TRACE级别日志，看是否有扫描到插件，正常会有插件英文名输出，搜索相关日志，并查看是否有相关提示，如果没有相关日志，就是插件没扫描到，确认插件类的包路径是在com.shsnc.**下。\n4. 查看snc-manager-up的topic里的上报信息，找到上报记录，确认是否有上报对应插件信息，上报信息内会包含pluginInfo字段。\n5. 如果有上报插件信息，查看snc-ng-server日志，看是否有错误日志。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "6d753dc7-d159-4edf-b905-d9c5dbd1b4d4",
+                  "title": "二、任务不下发不运行不停止和任务长时间未上报等问题（错误码：20006）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "42278a60-5a5d-461a-9707-34667e28ee7f",
+                        "title": "首先确认执行目标proxy或agent是否在线，或尝试重启proxy或agent解决，然后再根据下面流程排查："
+                      },
+                      {
+                        "id": "f2ddb4c3-a03d-4acd-870d-583ddc827558",
+                        "title": "快速排查",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "baddc3dc-cb5c-4486-ab8b-da73bb9fe026",
+                              "title": "- 从任务管理列表或查数据库等方式，看任务的错误信息字段是否有描述失败原来。\n- 从任务管理列表或查数据库等方式，看任务的执行状态是什么状态，根据状态分析任务失败的环节再进行下一步的排查\n- 如果确认任务已下发下去，到对应的proxy或agent服务上，开启DEBUG级别日志，甚至可以开启TRACE级别，根据关键字“`- {taskId}`”可过滤该任务相关日志做分析，`{taskId}`为下发时的任务id，注意中间有空格。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "65812b4d-95bf-4286-84ad-7a6c83295b12",
+                        "title": "下面是任务在前端保存成功后的执行流程，根据流程逐步排查，一般对应服务会打印对应的日志：",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "cb81f8a3-9b2d-4fd4-9ed0-b9348c66ab85",
+                              "title": "- 指定proxy或agent执行的流程：\n    1. 执行目标通过kafka的snc-manager-up发送消息定时主动拉取任务，kafka消息内容的tasksGet字段为任务更新时间，每次只拉取这个时间之后更新的任务。\n    2. snc-ng-server消费snc-manager-up消息，根据tasksGet字段查询目标在这个时间之后更新的任务，然后通过目标所属的集群组topic下发任务，默认topic是snc-message-default。\n    3. 执行目标通过消费集群组topic消息来接收任务消息，然后执行任务。\n- 指定集群组执行的流程：\n    1. snc-ng-server定时30秒扫描出当前90秒以上（连接3次心跳的时间）未上报任务状态的任务和新任务。\n    2. snc-ng-server根据任务所属集群组判断是否还有proxy在线，然后再发送任务消息到该集群组topic，随机其中一个proxy消费执行。\n    3. 如果任务正常执行，在任务信息表snc_task的target_id字段会记录当前执行任务的proxy的id。\n- 任务停止流程跟指定proxy或agent执行流程一样，在拉取任务时候如果任务是禁用状态，会下发一个停止任务的任务给执行目标。对于执行目标为集群组的，则根据target_id字段给当前执行目标下发停止任务。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "01f165b6-5f2a-48f5-a8c5-9928dc5f7cce",
+                        "title": "任务未下发成功（错误码：13009）",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "9116837d-d81b-46ea-9d62-52d435adc764",
+                              "title": "1. 先确认任务所属的代理是否离线，需要在线才能下发任务。\n2. 查看snc-ng-server日志是否出现“已在检查XXX[xxx]的任务更新情况”\n    - 检查redis缓存是否存在key:`SNC_NG_SVR:send_task:xxx`并且未设置过期时间，如果存在删除该key即可。\n3. 如果是某个代理下其中一个或几个任务未下发成功\n    - 检查redis缓存是否存在key:`SNC_NG_SVR:task:starting:{taskId}`并且未设置过期时间，如果存在删除该key即可，其中{taskId}为任务id。\n4. 如果redis缓存未找到对应的key，尝试编辑再保存一下任务，或重启代理，再触发一次任务下发。"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "b0785245-7a61-487a-a619-4fda187d3bbe",
+                  "title": "三、proxy日志频繁出现`kafka启动，assigned partitions: 1,2,3`",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "c82f18fa-8f50-4fc1-8015-32d095dcf5e4",
+                        "title": "出现该日志主要原因是proxy接收消费的topic不停的在重平衡，可能是proxy集群下proxy数多并且连接kafka不稳定。   \n尝试将集群下所有proxy增加以下配置解决：\n\n```properties\n# 默认值6000\nproxy.kafka.consumer.session.timeout.ms=60000\n# 默认值2000\nproxy.kafka.consumer.heartbeat.interval.ms=15000\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "3276da14-39fc-4209-911e-c5b23156c8dc",
+                  "title": "四、日志频繁出现 `channel[ip:port] can not write`",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "5c3704ab-f136-4ba7-a09d-c6b809f29b61",
+                        "title": "出现该日志主要原因netty发送数据通道缓存已满，多数是传文件的时候出现。偶尔出现不影响。    \n如果频繁出现或已影响到功能运行了，出现问题的服务可加下面配置解决（不需要proxy和agent同时加）：\n\n```properties\n### proxy 配置\n# proxy 默认25M\nproxy.netty.writeBufferWaterMarkLow=26214400\n# proxy 默认50M\nproxy.netty.writeBufferWaterMarkHigh=52428800\n### agent 配置\n# agent 默认5M\nagent.netty.writeBufferWaterMarkLow=5242880\n# agent 默认10M\nagent.netty.writeBufferWaterMarkHigh=10485760\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "2cac4659-e018-497e-a08e-503af494b9eb",
+                  "title": "五、agent日志频繁出现 `netty ip:port unwritable`",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "0002f83d-07a7-41b2-bc9b-2995854abf09",
+                        "title": "出现该日志主要原因agent通过netty向proxy发送数据通道缓存已满，偶尔出现不影响。    \n如果频繁出现或已影响到功能运行了，可增加proxy分担压力，或在agent加下面配置尝试解决：\n\n```properties\n### agent 配置\n# agent 默认5M\nagent.netty.writeBufferWaterMarkLow=5242880\n# agent 默认10M\nagent.netty.writeBufferWaterMarkHigh=10485760\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "75f7d179-cbf5-49f5-9fbf-c88db272d636",
+                  "title": "六、SSH连接被中断【ssh版本不一致】;SSH连接信息为：xxx.xxx.xxx.xxx,sshUser为：xxx",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "ded42b74-e82a-49f5-a33a-dad072e034fa",
+                        "title": "- 问题现象 通过ssh方式执行命令或脚本时返回上面的提示。 日志文件中出现异常信息：`com.jcraft.jsch.JSchException: Algorithm negotiation fail`。\n- 问题原因 目标服务器的ssh与proxy或agent的加密算法不一致，无法进行加密通信。一般是目标服务器的ssh版本过低，算法过旧。\n- 解决方法\n    - 方法一：升级目标服务器的ssh版本。\n    - 方法二：修改proxy或agent配置文件，增加对应过时的算法\n        ```\n        # proxy配置\n        proxy.ssh.kex=diffie-hellman-group1-sha1\n        proxy.ssh.serverHostKey=ssh-rsa,ssh-dss0\n        # agent配置\n        agent.ssh.kex=diffie-hellman-group1-sha1\n        agent.ssh.serverHostKey=ssh-rsa,ssh-dss0\n        ``` \n      通过下面两个方式之一查目标服务器ssh支持的算法：\n        - 方式一：在客户端执行查看命令：`ssh -vvv 目标服务器ip`，找到下面内容：\n          ```\n          debug2: KEX algorithms: diffie-hellman-group-exchange-sha1,diffie-hellman-group14-sha1,diffie-hellman-group1-sha1\n          debug2: host key algorithms: ssh-rsa,ssh-dss\n          ```\n          关键字 `KEX algorithms` 后面对应的是 `ssh.kex` 配置。   \n          关键字 `host key algorithms` 后面对应的是 `ssh.serverHostKey` 配置。\n        - 方式二：在服务器上执行查看命令：`ssh -Q kex; ssh -Q key; ssh -Q cipher; ssh -Q mac`"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "dc655384-771e-4d59-8dad-6d9a07038964",
+                  "title": "七、启动报“获取本机MAC地址出现异常”",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "0ae0e63e-5c13-4828-9ed5-330d1fceac5f",
+                        "title": "- 问题现象   \n   日志文件中只出现`获取本机MAC地址出现异常`这个异常错误信息，并且没有其他日志信息。\n- 问题原因 \n   服务器上配了多个dns解析。\n- 解决方法 \n  - 只保留一个dns解析。\n  - 例如：注释掉 /etc/resolv.conf 里面的内容\n- 启动脚本增加jvm参数指定使用其中一个dns：-Dsun.net.spi.nameservice.nameservers=8.8.8.8 （未验证）"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "6d0adc29-0a66-44c3-a3ef-1c4e9b048b73",
+                  "title": "八、脚本执行不了相关问题",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "03863a14-f778-4318-829b-6f761cdae820",
+                        "title": "先找一下下面以前遇到过的一些proxy或agent无法执行脚本的情况，看有没有相似的场景和解决方法，如果没用，就按下面方法排查一下"
+                      },
+                      {
+                        "id": "38de5b08-7e1b-49f8-81f3-2adde4d136eb",
+                        "title": "自排查方法",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "eba91916-58ec-4d2a-8fec-18a5eeb08f4a",
+                              "title": "使用程序自带的测试工具`commandTest`测试进行下面一些测试\n\n- 执行一下脚本，分析返回执行结果和查看日志文件有没有输出什么错误或异常   \n  `java -jar snc-ng-agent*.jar cmd \"commandTest=sh /{script_file.sh}\"`\n  0.4.1版本可增加`debug`参数设置日志级别：`java -jar snc-ng-agent*.jar cmd debug \"commandTest=sh /{script_file.sh}\"`\n- 输出程序执行的环境变量，与用户直接执行的环境变量做对比   \n  linux: `java -jar snc-ng-agent*.jar cmd \"commandTest=env\"`\n  window: `java -jar snc-ng-agent*.jar cmd commandTest=set`"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "6e4de7b4-332c-4181-92df-1df0661a2982",
+                        "title": "脚本执行结果与手动执行不一样",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "e3e53041-6d28-4721-94d9-89025fa7b32b",
+                              "title": "1. 执行代理开启debug级别日志（即最终执行的proxy或agent）\n2. 触发执行脚本的功能并关注日志输出，找出代理执行脚本的命令，并对比手动执行脚本的命令的差别，两边的执行脚本命令需要一致。\n    - 如果是执行临时脚本，可以给proxy或agent添加以下配置保留临时脚本用于排查问题：`<proxy|agent>.exec.temp.file.clean=false`\n3. 如果日志输出的命令与手动执行不一样，就复制日志的命令出来执行，如果结果还是不一样，就需要调整上层服务功能下发的命令，请联系对应功能的产品负责人排查处理。\n4. 如果日志里面的命令与预期的一样，则可能是环境变量不一样，执行下面命令查询代理的环境变量并对比直接查询环境变量的差异，并在脚本中添加或修改环境变量。\n   linux: `java -jar snc-ng-agent*.jar cmd \"commandTest=env\"`\n   window: `java -jar snc-ng-agent*.jar cmd commandTest=set`"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "5228f5d1-27ff-43b3-9b35-b6128565c38d",
+                        "title": "湖南电信部分agent执行脚本报无权限错误",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "ee3f478b-c6f7-4eb5-88f1-2cf619ff1769",
+                              "title": "- 环境\n    - 系统：Red Hat 4.8.5-11\n    - 旧版agent版本：1.3.8\n- 问题现象 使用agent本地方式执行脚本，无论执行任何脚本，都会执行失败，报错误信息：`bash: /usr/bin/sh: Permission denied`\n- 排查过程\n    - 查看 `/usr/bin/bash` `/usr/bin/sh` 和上面每一级目录都已经给了执行权限，和脚本也给了执行权限，还是报错。\n    - 使用agent启动用户按照代码执行脚本命令方式 `bash -c \"/tmp/snc_agent_tmp/xxx.sh\"` 却能正常执行。\n    - 与正常执行的agent对比了系统版本，bash版本，系统环境变量，并无差异。\n    - 尝试不使用`bash -c`直接执行脚本，命令：`/tmp/snc_agent_tmp/xxx.sh`，脚本需要给执行权限，并第一行指定`#!/bin/sh`\n      。然后执行会报错误信息：`bad interpreter: Permission denied`.\n    - 根据错误找到问题说明，具体原因说不清，大概是分区挂载的问题。\n      - https://www.cnblogs.com/linyfeng/p/11087655.html\n      - http://xcd.blog.techweb.com.cn/archives/122.html\n- 解决方法\n    - 添加配置`agent.dir.temp={agent_home}/snc_agent_tmp`，将生成脚本的临时目录放到agent的安装目录下。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "883a1603-643b-403f-a075-d1481cf53232",
+                        "title": "aix系统通过脚本采集oracle数据库性能无数据返回",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "65cb1950-438d-44a1-b15e-11526e553ab7",
+                              "title": "- 问题现象   \n  agent执行脚本无结果返回，，开启debug级别日志，日志输出了脚本执行的错误信息：`0509-360 Cannot load program /osw/ogg/ggsci because of the following error:`\n\n- 问题原因    \n  脚本需要设置环境变量指定 ODBC 的动态链接库，aix系统与其它linux系统设置的变量名不一样，一般linux系统是设置`LD_LIBRARY_PATH`这个环境变量，aix系统需要设置`LIBPATH`这个环境变量。   \n  参考链接：https://www.ibm.com/docs/zh/informix-servers/12.10?topic=products-libpath-environment-variable-unix\n\n- 解决方法   \n  执行脚本同时设置`LD_LIBRARY_PATH`和`LIBPATH`这两个环境变量。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "289ef6dc-00a4-478d-b00e-2d0d74decced",
+                        "title": "执行脚本出现异常：Executable can not be null",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "a1796022-7c14-445a-95ad-cb4d4506ef80",
+                              "title": "- 问题现象   \n  agent执行任务脚本或命令结果都会出现异常`Executable can not be null`，查看agent启动时的日志也现出了日志内容`can't find shell`。\n\n- 问题原因   \n  agent识别系统命令环境失败，无法识别到`bash`、`sh`和`ksh`的命令执行环境。可能是jre文件的执行权限问题。\n\n- 解决方法   \n  给jre目录赋予执行权限：chmod -R +x ./jre"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "19d5b661-5636-482f-a160-983585eecac6",
+                        "title": "Windows执行脚本出现异常： Cannot run program \"cmd.exe\" (in directory\".\"): CreateProcess error=5，拒绝访问。",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "0827ebe6-03bf-4610-82d2-6b18e870b1fe",
+                              "title": "南航现场发现该问题是因为系统杀毒软件禁止执行cmd程序了，如果遇到该问题，请确认主机是否有安装并启动类似功能的软件。"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "eb41fad7-c8f7-48bb-a3ec-563dfaa37bcb",
+                  "title": "九、agent无法连接proxy",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "761c4a08-a19b-43fb-a093-8b9b2591d8e4",
+                        "title": "日志出现下面错误信息及解决方法",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "7e06bd0d-2e73-4032-a6bc-dffcdc290e85",
+                              "title": "- Caused by: java.net.SocketException: No buffer space available (maximum connections reached?): bind\n  - 原因：proxy或agent可能无法创建连接端口\n  - 解决1：先确认proxy和agent是否创建端口，使用telnet命令测试连接任意可连接的端口。如果没有telnet，使用《程序自带的测试工具》的端口测试命令测试\n  - 解决2：确认用户是否正常，使用其它正常连接外部端口的用户启动服务。如：linux的root用户，windows的Administrator用户。"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "858395a5-2ef6-4735-acb2-778f6bcaa0ca",
+                  "title": "十、agent上报上来后无集群信息",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "36222562-a166-4105-88c6-fc2b92506493",
+                        "title": "- 问题原因      \n  proxy上报的ip与agent配置的proxy ip不一致。\n\n- 解决方法\n    - 原因一：proxy机器是多网卡，在配置文件中指定proxy的ip为agent配置的ip，proxy上报的ip和要agent配置的proxyIp一致。\n    - 原因二：网络策略原因，agent连接的不是proxy的真正ip，解决方法：\n      - proxy增加配置：`proxy.ignore.check.ip=true`。\n      - proxy的ip配置设为agent连接的ip。\n      - 这种解决方式可能会导致proxy无法启停重启等操作。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "760bc0e8-798c-4914-bb77-2bcd7873c0fc",
+                  "title": "十一、任务异常信息或proxy和agent的日志里包含有：不支持插件类型，pluginName: {插件的英名名}（错误码：13002）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "da91884a-9a68-47bf-8af3-56eaaaebc426",
+                        "title": "- 问题原因      \n  - proxy或agent的插件目录不存在该插件，如果插件列表中存在对应的插件，那可能在升级或迁移代理过程被遗留没保存下来，或者被其它方式误删了\n  - 插件加载失败\n  - 插件是内置插件或是内部功能插件，proxy和agent版本过低，未包含该插件\n\n- 解决方法   \n  - 重装安装该插件\n  - 如果确认插件已安装，参考错误码：13005方案处理\n  - proxy和agent版本过低的情况：\n    - 如果是内置插件可以尝试安装该插件解决，否则需要升级版本。\n    - 如果是内部功能插件则只能通过升级版本解决。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "1f44f305-28c5-43d0-9c60-7e70a430158c",
+                  "title": "十二、数据库不支持、缺jdbc驱动、jdbc驱动版本过低等与驱动相关问题解决",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "fbb4e2d5-d94d-41c8-9856-96abdfce0c4a",
+                        "title": "无论什么原因需要改动jdbc驱动包的，请反馈给相关技术人员，技术人员会根据情况和需要将驱动包整合到安装包里面，以减少后期升级带来的麻烦。\n- 0.3.0版本及之后的处理方式   \n  安装包自带的驱动包保存在：`plugin.d/internal/snc-ng-agent-jdbc-drivers/libs`，改动前请确认是否已存在相应的驱动包（不区分版本号）\n  - 添加jdbc驱动包   \n    如果确认驱动包不存在，新建目录`plugin.d/jdbc-driver-libs`，将驱动jar包下到该目录重启服务即可。   \n    该方式添加的驱动包不受服务升级、重装影响。\n  - 替换jdbc驱动包   \n    对于已存在的驱动包需要升级或降级，只能做替换处理，需要先删除存在的驱动jar包，再按上面的《添加jdbc驱动包》步骤处理。  \n    注意：如果服务升级或重装，自带的驱动包会恢复原样，需要再次手动删除。\n     \n- 0.3.0版本之前的处理方式   \n  找到对应插件的安装目录，直接在libs下替换或添加驱动jar包。   \n  注意：内置插件会在服务升级或重装时恢复原样，需要再次手动处理。插件的升级或重装也一样会恢复原样需要再次手动处理。"
+                      },
+                      {
+                        "id": "c5a6fa85-6b2c-4710-9be9-f220aca321f8",
+                        "title": "当前支持数据库类型：",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "421632ac-d6ff-4ad6-80a1-9b66cdf1f19a",
+                              "title": "- Mysql\n- Oracle\n- SqlServer\n- postgresql\n- gbase\n- DB2\n- informix\n- HANA\n- 达梦dameng\n- GaussDB  使用mysql驱动\n- gbase\n- GoldenDB 使用pgsql驱动\n- OceanBase 使用mysql驱动\n- OpenGuass\n- mariadb 使用mysql驱动\n- KingbaseES(人大金仓) 使用pgsql驱动\n如果备注了使用指定数据库驱动，即数据库连接字符串需要使用该数据库驱动的写法，如指定使用mysql驱动，则用mysql的写法：jdbc:mysql://xxx:3306/db_name"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "4fe01ab7-09b9-4b43-b68f-b5f48fd84511",
+                  "title": "十三、proxy或agent已启动，但服务还是离线状态（错误码：13008）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "76051885-8aea-4606-80de-402178fcfb11",
+                        "title": "proxy已启动但服务无法注册或还是离线状态",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "ba8f5bed-7276-48de-bcc4-b2dff5e5233c",
+                              "title": "查看proxy的日志输出，服务启动正常会输出下面日志：\n```text\nKafkaConnector - kafka启动，assigned partitions: 0,1,2\n```\nproxy 如果已经输出上面日志，并无其它错误日志，表示proxy已经正常工作。   \n**如果有出现该日志的排查方向**   \n- 检查snc-ng-server和snc-ng-proxy的主机时间与kafka主机时间是否一致，如果差太多会导致消息被丢弃不处理\n- 先查看proxy日志是否有可疑的错误信息，如果有根据错误信息进一步排查和处理。\n- 将日志级别调成`DEBUG`，观察几分钟，查看日志是否有输出`定时上报状态`，如果有输出进入下一步排查，如果没有就跳到最后一步联系相关技术人员。\n- 查看snc-ng-server的日志里面是否有proxy上报信息的日志，可根据proxy的ip进行日志搜索查看。\n  - 如果有搜索proxy的上报日志，查看日志里面是还有错误日志，再根据相关错误日志进行排查和处理。\n- 如果snc-ng-server日志里未查找到相关日志，则查看`snc-manager-up`这个topic里面是否有proxy的上报信息。\n  - 如果topic里有搜索到proxy的上报信息，进一步确认该topic是否能正常消费数据，特别是使用消费者`snc-ng-server`进行确认。\n    - 注意：proxy与kafka和snc-ng-server的服务器时间是否有同步，如果想着太多，会影响数据消费，导致snc-ng-server不能及时处理消息。\n  - 如果topic里未搜索到proxy的上报信息，进一步确认该topic是否能发送数据。\n- 上面几点经排查后未发现问题或发现问题无法解决，请联系相关技术人员处理。发现问题的，请记录下问题的排查记录。\n\n**如果未出现该日志的排查方向**\n- 查看proxy日志是否有错误日志，根据错误信息进一步排查处理。\n- 查看proxy日志是否一直在输出`消息上报通道不可用，无法上报信息，服务不可用`，注意服务刚启动数秒内输出该日志是正常现象。\n  - 查看kafka配置相关配置是否正确。\n  - 查看kafka服务是否正常，特别是检查proxy配置的topic是否能正常消费数据。\n  - proxy所属的集群是否启动了多个proxy，检查集群配置的topic的分区数，集群下的proxy个数不能超过分区数。\n- 上面几点经排查后未发现问题或发现问题无法解决，请联系相关技术人员处理。发现问题的，请记录下问题的排查记录。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "bd6a4370-5f7a-48e4-939c-6462da9a5b4b",
+                        "title": "agent已启动但服务无法注册或还是离线状态",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "124f3491-b1ed-46dc-8bba-0c058e8dbf0d",
+                              "title": "查看agent的日志输出，服务启动正常会输出下面日志：\n```text\nagent connected to proxy[192.168.33.123:10031]\n```\n该日志的输出表示agent已经连接上proxy，如果agent连接的proxy集群有多个proxy也会输出多个对应proxy ip的日志，正常有多少个proxy就需要输出多少个日志。\n但agent只要连接到其中一个就能正常工作，状态也应该要显示在线。   \n\n**如果有出现该日志的排查方向**\n- 先查看agent日志是否有可疑的错误信息，如果有根据错误信息进一步排查和处理。\n- 确认agent所连接的proxy是否正常在线。\n- 将日志级别调成`DEBUG`，观察几分钟，查看日志是否有输出`定时上报状态`，如果有输出进入下一步排查，如果没有就跳到最后一步联系相关技术人员。\n- 将proxy日志级别调成`DEBUG`，观察几分钟，查看日志是否有agent的上报信息`接收到一条来自192.168.22.52:56436的SncBaseMessage[***]消息`，如果有输出进入下一步排查，如果没有就跳到最后一步联系相关技术人员。\n  - 如果proxy有多个，可在agent日志搜索关键字`proxy连接集群发生变化`最后一条，看agent最后发送数据的proxy是那个。\n- 查看snc-ng-server的日志里面是否有agent上报信息的日志，可根据agent的ip进行日志搜索查看。\n    - 如果有搜索agent的上报日志，查看日志里面是还有错误日志，再根据相关错误日志进行排查和处理。\n- 如果snc-ng-server日志里未查找到相关日志，则查看`snc-manager-up`这个topic里面是否有agent的上报信息并记录下来然后进入最后一步。\n- 上面几点经排查后未发现问题或发现问题无法解决，请联系相关技术人员处理。发现问题的，请记录下问题的排查记录。\n\n**如果未出现该日志的排查方向**\n- 查看agent日志是否有错误日志，根据错误信息进一步排查处理。\n- 查看agent日志是否一直在输出`消息上报通道不可用，无法上报信息，服务不可用`，注意服务刚启动数秒内输出该日志是正常现象。\n    - 验证agent机器与proxy的端口是否能通信。\n- 上面几点经排查后未发现问题或发现问题无法解决，请联系相关技术人员处理。发现问题的，请记录下问题的排查记录。"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "d0d23095-43f1-422d-82ba-56f264fddf5c",
+                  "title": "十四、日志一直输出“消息上报通道不可用，无法上报信息，服务不可用”（错误码：11001）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "8b567353-c92b-438b-ae5a-8672c924d8eb",
+                        "title": "出现该日志的根本原因是服务无法与上级服务连接通信，注意：服务刚启动时因为还未与上级服务连通，可能会输出该日志，服务完全启动后就不再输出。\n- 如果是agent服务，则表示agent与配置文件中的全部proxy无法连接：\n  1. 检查配置文件中的proxy配置是否正确。\n  2. 检查配置的proxy是否至少有一个在线并且服务正常。\n  3. 确认本机与proxy机器的网络是否可达，可使用命令验证：`./jre/bin/java -jar snc-ng-agent-*.jar cmd portTest=ip:port`。\n- 如果是proxy服务，则表示proxy无法消费配置文件中指定topic的数据：\n  1. 确认kafka服务是否正常，相关配置是否确认。\n  2. 检查proxy集群的proxy个数是否超过topic的分区数（kafka的特性，超过分区数的消费者无法消费数据）。\n  3. 尝试指定消费组id为`snc-ng-consumer`（proxy的默认消费组）去消费topic数据，验证topic是否还正常。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "7cdeead9-bb8f-4564-a721-4fca2cea9dfa",
+                  "title": "十五、启动失败（错误码：13001）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "5e797150-8606-4523-9693-ab9972c477f5",
+                        "title": "如果服务无法启动或进程一会突然退出，如果出现该情况请先查看日志，根据日志的错误描述再进一步处理。"
+                      },
+                      {
+                        "id": "79eb4193-f1cc-44ae-820d-664c3933a7fa",
+                        "title": "端口被占用",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "68712495-e408-458b-ab96-15640d563cfd",
+                              "title": "查看日志是否有出现`Address already in use: bind`或`端口已被占用`或`can not bind monitor port`，则表示服务需要用到的端口已被别的服务占用。涉及但不限于下面端口：\n```properties\n## proxy 需要使用的端口\n# agent管理通信端口，必需使用\nproxy.listen.port=10031\n# 监控监听端口，开启监控功能时使用\nproxy.monitor.zabbix.receivePort=10033\n\n## agent 需要使用的端口\n# 监控监听端口，开启监控功能时使用\nagent.monitor.zabbix.receivePort=10032\n```\n如果是Windows系统报这种错，需要进一步排查系统的随机端口范围是否包含了需要使用的端口   \ncmd查询命令：`netsh interface ipv4 show dynamicport tcp`   \n- Start Port 表示随机开始端口\n- Number of Ports 表示随机端口个数\n即范围是从`Start Port`到`Start Port` + `Number of Ports`，这个范围的端口无法使用，需要修改端口配置在范围以外，或按下面方式修改系统配置：   \n修改随机端口范围为原来Windows默认范围：`netsh interface ipv4 set dynamicport tcp start=49152 num=16384`，执行命令后需要重启系统生效。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "b5ad0e2f-cf89-4913-8e9c-8b3d175908b9",
+                        "title": "proxy日志输出“netty服务启动失败”、“netty start listening failed”",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "aad09e0a-6736-4b76-8c92-960b126d5e0e",
+                              "title": "出现该日志的根本原因是proxy无法监听指定端口（由配置`proxy.listen.port`设置，默认10031）。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "61d668e2-99a7-4e5d-afc4-ff8334ab4112",
+                        "title": "无法启动并且无日志输出",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "c9d32e4b-df1d-4c03-b090-2fcd95d82d5d",
+                              "title": "尝试使用java命令直接启动jar包：./jre/bin/java -jar snc-ng-xxx*.jar\n\n- 如果是aix7.1版本系统，请确认系统级别是否是`7100-03`及以上，官方要求该级别及以上的才支持jdk8，低于该级别无法运行。\n  - 查看级别命令：`oslevel -r`\n  - 官方说明：https://www.ibm.com/support/pages/java-sdk-aix\n  - 解决方法：只能升级系统\n  - 也发现有部分`7100-00`级别的系统能运行，根本原因未确认，可能跟`libc++`版本有关，查询命令`lslpp -L |grep xlC`，   \n    查看`IBM XL C++ Runtime for AIX xxx`是否是6.1及以上版本，如果低于该版本可尝试升级看看，如何升级未展开研究，请自行研究如何升级和确认。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "0280cddc-a60b-48f4-ba08-4179981e8683",
+                        "title": "启动失败并在安装目录下输出了“core.xxxx”或“hs_err_pidxxx.log”",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "97a30f7a-47f0-42ef-a208-62c62d4d5b0f",
+                              "title": "- 查看日志是否有关键字`C  [libresolv.so.2+0x7a91]  __libc_res_nquery+0x1c1`\n   修复启动脚本，增加jvm启动参数：`-Djava.net.preferIPv4Stack=true`\n- 上面未找到处理方法，联系技术人员处理"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "378a2e1d-724e-4206-b38f-b3aee294727a",
+                        "title": "Windows系统启动失败并报错："
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "17b1076a-a69c-4703-87e3-dd30ff47c1d4",
+                  "title": "十六、监控脚本错误（错误码：10001）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "58f8ceb8-00f3-44cd-a733-2c664c75c342",
+                        "title": "监控采集的脚本配置文件默认保存在以下目录，并且按下面目录顺序读取：\n1. `config/monitor/sync` 从监控中心同步下来的采集脚本\n2. `config/monitor` 自定义采集脚本（现在一般不用这种方式）\n3. `plugin.d/internal/snc-ng-agent-monitor-server/monitor` 内置的采集脚本\n\n- 脚本采集出现该错误码   \n按上面说的目录顺序查看 `script` 目录是否存在对应的脚本文件\n- jdbc采集出现该错误码   \n按上面说的目录顺序查看 `jdbc/sql.properties` 文件是否配置了对应的监控项key\n- snmp采集出现该错误码   \n按上面说的目录顺序查看 `snmp/mib.yml` 文件是否配置了对应的监控项key\n\n- 解决方案：\n  - 脚本不存在：\n    - 到`监控中心`-`配置管理`-`监控脚本`页面配置上对应的脚本，然后等待同步生效。\n    - `监控脚本`管理里面已存在对应脚本配置：\n      - 确认脚本配置是否确定，可通过该地址下载最终生成的脚本文件确认：http://{ip}:8080/snc-ng-server/monitorScript/download?checkUpdate=true\n      - 如果确认最终生成的脚本没问题，可能是监控脚本未同步成功，根据下面《监控脚本未同步排查指导》章节处理。\n  - 如果确认脚本已存在，联系相关技术人员处理。"
+                      },
+                      {
+                        "id": "ff38a97c-c2cc-44e1-9c16-cdf3b177c0ef",
+                        "title": "监控脚本未同步排查指导",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "0cad2cb8-3750-4b38-90f5-db981da59ec8",
+                              "title": "1. 确认`snc-ng-server`服务开启了监控脚本同步功能，检查是否存在下面配置。\n   ```properties\n   # 是否禁用监控脚本同步功能\n   shsnc.monitor.script.sync.disable=false\n   ```\n2. 确认proxy或agent的配置是否开启了监控功能\n   ```properties\n   # proxy开启监控功能的配置\n   proxy.monitor.zabbix.enable=true\n   \n   # agent开启监控功能的配置\n   agent.monitor.zabbix.enable=true\n   ```\n3. 监控脚本同步逻辑，可用命令查看监控同步时间：unzip -z monitor_script.zip\n   1. snc-ng-server定时从snc-amp服务同步脚本数据并保存在monitor目录下。需要脚本有修改才会触发同步。\n   2. snc-ng-proxy定时上报同步脚本消息给snc-ng-server，如果有脚本有更新，snc-ng-server会下发更新脚本命令给proxy，proxy会从指定地址下载脚本到本地config/monitor目录下。\n   3. snc-ng-agent定时上报同步脚本消息给snc-ng-server，如果有脚本有更新，snc-ng-server会下发更新脚本命令给agent，agent会通过proxy从指定地址下载脚本到本地config/monitor目录下。\n   4. 脚本下载地址：http://192.168.1.1:10085/snc-ng-server/monitorScript/download 可手动尝试从该地址下载脚本。\n4. 按下面顺序搜索服务的日志，搜索关键字“监控脚本”，查看是否有错误信息，根据信息提示处理。\n   - snc-ng-agent -> snc-ng-proxy -> snc-ng-server\n5. 联系相关技术人员"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "d653756c-ae40-4694-8242-182025576ca5",
+                        "title": "监控脚本采集结果与手动执行脚本的结果不一样。",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "a527a8a6-954c-40ec-8d48-bc9ab8220674",
+                              "title": "1. 可执行以下测试命令验证结果：`java -jar snc-ng-proxy*.jar cmd 'metric=监控' host=proxyIp:monitorPort`\n2. 参考第八点的《脚本执行结果与手动执行不一样》小节，然后执行测试命令做对比。"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "88e37e51-96b2-4650-9657-c74adc7674f4",
+                  "title": "十七、kafka服务引起的错误（错误码：20001）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "abef0061-2547-4f54-a1b2-5ecc6aa83e9d",
+                        "title": "- 检查kafka服务是否正常。\n- 检查引起错误的topic是否能发送数据或是否能消费数据。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "8a4d8261-4fd6-4be6-a2da-3e5a10dae269",
+                  "title": "十八、proxy向agent发消息失败（错误码：20002）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "8ef4e2d2-b7ac-4be3-ba4f-119378ce4cc2",
+                        "title": "开启debug级别日志，直到问题复现后保留日志文件联系相关技术人员排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "0cc36e6b-96ae-418e-9e32-f7da7bf3bcc0",
+                  "title": "十九、agent向proxy发消息失败（错误码：20003）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "234c2c01-125f-4cea-892c-ed1dbb7bd6c9",
+                        "title": "开启debug级别日志，直到问题复现后保留日志文件联系相关技术人员排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "3dfc7e9e-f1eb-44d6-8c67-e43fd977d3a8",
+                  "title": "二十、监控项key不支持或参数不正确（错误码：12001，12002）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "0fa146b9-2680-4824-a437-a3416d797243",
+                        "title": "12001：监控项key不支持   \n12002：监控项key参数不正确   \n可执行下面命令查看支持的监控项及参数说明：\n```shell\n./jre/bin/java -jar snc-ng-agent-*.jar cmd metricKeyDesc\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "c829571f-ab2e-4346-be87-35ddf0a7b90a",
+                  "title": "二一、创建连接失败（错误码：12101，12102，12103）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "16903dc5-106d-4177-b20a-9fbd606415ca",
+                        "title": "12101：创建连接失败，按12102错误码方式处理   \n12102：连接连续创建失败多次（即12101错误）被拉进了黑名单不再创建连接，直到黑名单失效（默认连续触发5次12101错误，5分钟后失效）   \n- 确认目标服务是否正常运行。\n- 确认连接配置是否正确，如ip、端口、用户和密码等，使用其它客户端工具验证连接配置是否可以可用。\n- 确认本机与目标机器网络是否可达，可使用命令验证：`./jre/bin/java -jar snc-ng-agent-*.jar cmd portTest=ip:port`\n12103：连接连续多次进入黑名单（即12102错误），被永久拉入黑名单，不会再创建连接，先按12102错误码方式处理，解决问题之后在页面对应的proxy或agent详情手动清理黑名单"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "b545f72b-7d15-41d4-bf56-69fdc2700e2b",
+                  "title": "二二、系统运行错误（错误码：00001）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "8b3b57ff-a27f-4e72-aab6-3c37d5804e6a",
+                        "title": "如果出现该错误码表示系统可能运行不正常了，根据错误信息查找是否有下面关键字信息并根据指导做相应的处理，如果未找到对应描述则请联系技术人员处理。\n- 关键字：java.lang.outofMemoryError: unable to create new native thread   \n  线程创建失败，超过系统限制，可能原因：\n   - 常驻任务过多。\n   - 监控采集资源过多。\n   - 自定义插件没控制线程的创建上限。\n  使用下面命令确认问题。\n   ```shell\n   # 查看进程当前线程数\n   ps -eLf |grep pid |grep -v grep |wc -l\n   # 查看系统线程数限制\n   ulimit -u\n   ```\n  解决方案：\n    1. 修改系统`ulimit -u`的限制，建议最少设置65535，系统默认4096，一般是不够的。如何修改请自行搜索。\n    2. 增加proxy或agent来分担压力。\n    3. 监控采集资源过多的问题可以修改配置文件，将下面配置项适量改小，两项的值要设置成一样。\n        ```properties\n        agent.container.threadPools.monitor.corePoolSize=2\n        agent.container.threadPools.monitor.maximumPoolSize=2\n        ```\n       \n- 关键字：java.lang.outofMemoryError: Java heap space   \n  内存溢出。\n  解决方案：\n    1. 增加采集服务来分担压力。\n    2. 通过修改启动文件 snc_ng_server.sh 的启动参数，增加服务运行内存。\n\n\n- 关键字： `打开的文件过多` 或 `Too many open files`  \n  打开的文件句柄数超过了系统限制。\n  使用下面命令确认问题。\n   ```shell\n   # 查看系统文件句柄数限制\n   ulimit -n\n   ```\n  解决方案：\n    1. 修改系统`ulimit -n`的限制或其它方式加大限制，建议最少设置10240。如何修改请自行搜索。\n  注意：\n    如果是agent出现该问题，问题不一定是出现在agent端，也可能是proxy端有问题，请连proxy端一起检查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "ce238b48-b73e-4674-a207-2b751eb4a1b3",
+                  "title": "二三、插件运行错误（错误码：00002）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "4fc92130-6a72-49fc-a595-e7d682fd7beb",
+                        "title": "可能插件运行时的异常未处理，需要联系插件开发的相关技术人员处理"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "6fa325c6-cc4c-4b6f-94f5-0bdad228c1c6",
+                  "title": "二四、代理突然离线，异常信息“长时间未上报心跳”（错误码：11000）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "1d908894-3b57-47ca-90fd-411783152934",
+                        "title": "- 出现该问题主要原因是代理无法上报心跳，确认服务进程是否还在并查看日志是否有什么异常信息并根据异常信息提示处理。\n- 查看代理安装目录下是否有类似`java_pidxxx.hprof`的文件，并且代理最后心跳时间与该文件的创建时间接近，那应该是内存溢出了，可尝试适当增加代理的运行内存。\n- 进程不存在，尝试启动服务，如果服务启动失败，参考错误码：13001 方案处理。\n- 进程存在，查看日志是否是错误码11001问题，否则参考错误码：13008 方案处理。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "88af90c1-668b-456b-bcbc-e56f2bc45fd5",
+                  "title": "二五、插件无法卸载成功（错误码：13003）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "b54344fa-50f5-4707-9379-e00214958f0f",
+                        "title": "插件的卸载需要满足一定的条件才能支持，所以某些插件可能不支持卸载，这类插件需要重启proxy和agent服务完成卸载或重装。   \n插件开发人员可以按插件开发文档的《插件热部署重装支持》章节开发插件以满足插件在线卸载功能。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "606e653a-0ff9-4117-9dcf-9240913cab4c",
+                  "title": "二六、运行异常（错误码：20000）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "41ff8fd5-e9c3-4e80-bf6e-ba4dae32e11f",
+                        "title": "出现该错误请到日志文件中找到对应的异常错误信息，一般错误信息有描述错误的原因，请根据错误原因做对应处理。如无法处理请保留错误日志，联系相关技术人员处理。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "0d478eeb-e596-4fa0-8d8c-32a93966f1b2",
+                  "title": "二七、任务重复下发（错误码：13004）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "e1f8c7e6-c078-44a2-a5d0-68c464e0ee97",
+                        "title": "出现该错误是任务连续下发给proxy或agent，如果任务正常运行，该错误可忽略。如果该错误持续不断出现，则需要联系相关技术人员排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "bb05eba5-2946-42d4-a7f0-19691cbcc30a",
+                  "title": "二八、业务异常（错误码：13000）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "05052187-c970-411e-9946-2ca7d9c4b426",
+                        "title": "业务运行异常，用于提示，一般无需处理，请根据现场情况判断是否处理。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "489cb757-099c-49a8-b520-7760e66f2ff7",
+                  "title": "二九、执行任务解析失败（错误码：20004）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "400599b1-3433-4b4d-a600-41bc49b42c61",
+                        "title": "任务信息数据的json格式不正确，无法解析。\n- 检查proxy或agent所属集群的topic是否有其它业务数据误发送过来\n- 使用其它工具验证任务信息数据的json格式是否正确可解析。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "51dbb8d9-674b-4ee7-9024-6864768e033e",
+                  "title": "三十、监控脚本加载失败（错误码：10002）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "29c9b183-51b5-4dac-942c-f69ce7e50c1a",
+                        "title": "监控jdbc或snmp脚本配置有错误无法加载，请检查对应的脚本配置内容，脚本配置文件默认保存在以下目录，并且按下面目录顺序读取：\n1. `config/monitor/sync` 从监控中心同步下来的采集脚本\n2. `config/monitor` 自定义采集脚本（现在一般不用这种方式）\n3. `plugin.d/internal/snc-ng-agent-monitor-server/monitor` 内置的采集脚本"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "a5b4b524-38b8-47f4-9f8b-96a7d7f12896",
+                  "title": "三一、定时任务积压（错误码：13006）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "601ed3c3-22c1-4761-809a-a5c4bce8c8c5",
+                        "title": "当定时任务执行时间过长，但任务执行周期过短就出现该提示，如：任务周期为每分钟执行一次，但执行时间超了一分钟。      \n如果偶尔出现又不影响业务可不处理，如果已经影响到业务了，需要调整任务配置或参数避免上面所述情况。   \n偶尔出现，可在配置中添加以下面配置设置默认处理策略：\n```properties\n# 1.立即执行，不管理上次调度是否有执行完，2.添加到执行队列中，等上次调度执行完马上执行（会累计），3.放弃本次执行（默认3）\n# agent同样支持该配置，将前缀proxy改为agent即可\nproxy.schedule.default.misfire=3\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "0bd9ed62-deb8-4740-ba49-536578e1b0ce",
+                  "title": "三二、插件冲突（错误码：13007）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "1a3f7415-1a3d-4c91-8a48-47facab4380a",
+                        "title": "proxy或agent的插件目录`plugin.d`下存在相同的插件，保存在不同的目录下。加载规则是最新打包的插件，即以打包时间为准，不以版本为准。\n- 手动删除不需要的插件目录"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "a80c9d06-505d-47dd-9519-e1cf41e7f705",
+                  "title": "三三、常驻任务插件无法停止（错误码：20005）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "ffa803c2-df67-4758-8323-71b8fc8163bb",
+                        "title": "日志出输出“任务已停止10秒线程还未退出，尝试中断线程”，是插件的start方法未正确处理退出事件，一直在运行不退出。   \n需要插件开发人员参考插件开发文档的《常驻任务插件开发》章节正确处理退出事件。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "4ada9428-2fbb-474c-8892-d79fee43e0d2",
+                  "title": "三四、线程池队列已满（错误码：10003）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "9d732c54-56ab-4752-9b91-6226248550bb",
+                        "title": "日志输出：pool[xxx] queue is full(size:1000), discarded task   \n或任务报错：线程池[xxx]队列已经满[size:1000]，无法处理任务  \n如果遇到上述错误表示任务太多，一下子无法处理完，可以尝试下面配置解决，其中`xxx`为线程池名称：\n```\n# 以下配置agent同样支持，将前缀proxy改为agent即可\n# 队列大小，需要比上面的日志输出size值大\nproxy.container.threadPools.xxx.queueSize=10000\n# 任务处理线程数，默认5\nproxy.container.threadPools.xxx.corePoolSize=5\nproxy.container.threadPools.xxx.maximumPoolSize=5\n```\n如果是proxy修改配置后还无法解决，并且线程池是`dataSend`，则需要进一步判断是否是下面有多个agent同时返回太大量数据导致proxy处理不过来，如果是该种情况，则需要增加proxy来分担压力或将分配一分部agent给其它proxy集群。   \n\n上述方法仍无法解决，需要联系相关技术人员进行进一步分析排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "d4ef43e9-1b9c-49fa-8874-c2cfb842da0f",
+                  "title": "三五、proxy启动出现日志“kafka assigned partitions is empty”（错误码：10004）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "0727f53d-c5a5-4289-a32e-bc98e484644c",
+                        "title": "- 情况一：proxy所属集群的proxy个数超出集群topic的分区数，超出的proxy无法会消费数据导致不能正常启动，解决方案如下：\n  - 增加集群，将超过的proxy迁移到新的集群中。\n  - 增加topic的分区数。\n- 情况二：proxy所属集群的topic还有其它地方使用与proxy相同的消费组（默认：snc-ng-consumer）在消费数据，解决方案如下：\n  - 找出这些消费数据的地方，修改其消费组与proxy的不一致。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "c844139f-b310-423e-b8c2-f97e8ad75cc6",
+                  "title": "三六、任务执行出现异常“java.lang.NoSuchMethodError”",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "b8afe4b9-93c8-4617-8146-955b483b2713",
+                        "title": "- 情况一：插件使用了新版特性在该版本的proxy或agent上没有，根据错误信息报错的类和方法，对照插件开发文档的《插件版本兼容列表》章节确认是否是该问题，对应解决方案：\n  - 升级proxy或agent到支持该特性的版本以上，最好升级到最新版本。\n    - 同时插件开发人员按《插件版本兼容列表》章节的说明增加打包配置限制插件安装被到低版本的proxy或agent。\n- 情况二：插件的依赖包冲突，根据错误信息找到报错类所属的依赖包，对比插件和proxy或agent是否存在相同的依赖包，解决方案：\n  - 移除插件的依赖包，使用proxy或agent自带的依赖包。\n  - 如果proxy或agent自带的依赖包版本过低，无法满足插件的功能，可尝试使用下面的方案临时解决并反馈回给技术人员在后续版本解决：\n    1. proxy或agent下面配置禁用插件的隔离功能。\n       ```properties\n       # proxy配置\n       proxy.container.pluginExcludeIsolation=plugin-english-name\n       # agent配置\n       agent.container.pluginExcludeIsolation=plugin-english-name\n       ```\n    2. 删除proxy或agent下的对应依赖包然后重启服务。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "37112f88-79c7-4ea6-bd37-dd02bcef6c30",
+                  "title": "三七、WinRm执行失败相关问题（错误码：20007）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "e0cbb081-89ca-430b-bfff-d2ce730e0e9a",
+                        "title": "执行出现异常错误：",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "cfc82994-dbd1-42a6-87b2-26c8de15ef5c",
+                              "title": "- 异常信息包含以下其中一个内容：\n  - `UndeclaredThrowableException: null`\n  - `IOException: Authorization loop detected on Conduit \"{http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd}WinRmPort.http-conduit\" on URL \"http://hostname:5985/wsman\" with realm \"null\"`\n  - `Could not send Message.`\n- 问题原因：\n  - 原因一：目标机器未开启WinRm服务功能。\n  - 原因二：目标机器的认证限制远程访问执行脚本。\n- 解决方法：\n  1. 确认目标机器是否开启WinRm服务功能，查看服务是否启动命令：`winrm enumerate winrm/config/listener`。\n     1. 开启WinRm服务：\n        - https://learn.microsoft.com/zh-cn/windows/win32/winrm/installation-and-configuration-for-windows-remote-management\n        - https://blog.csdn.net/u014108439/article/details/86706226\n  2. 如果目标机器已经开启WinRm服务功能，执行下面命令开启远程访问权限：\n     ```shell\n      winrm set winrm/config/service/auth @{Basic=\"true\"}\n      winrm set winrm/config/service/auth @{CredSSP=\"true\"}\n      winrm set winrm/config/service/auth @{Certificate=\"true\"}\n      winrm set winrm/config/service @{AllowUnencrypted=\"true\"}\n     ```"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "201f7330-3fb3-4d10-8448-c5848de62712",
+                        "title": "执行结果包含“系统中禁用执行脚本”",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "833f843d-9c4b-482d-bb0e-3f8d7f786647",
+                              "title": "- 目标主机禁用了远程执行脚本功能，在目标主机执行下面命令开启远程脚本执行功能：\n```shell\nset-ExecutionPolicy RemoteSigned\n```"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "111417ef-f822-4e2c-b876-37f0883a058f",
+                  "title": "三八、组[xxx]下无在线Proxy（错误码：13010）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "ef41975d-098f-401c-a95e-71fad71d38c9",
+                        "title": "- 先确认该集群组下是否安装了proxy并且至少有一个proxy在线。\n    - 如果未安装proxy则安装proxy。或者将任务改成其它集群组的代理执行，再或者删除任务。\n    - 如果已安装proxy但没有proxy在线，将proxy服务拉起即可。\n- 该集群组下安装了proxy并且proxy服务的进程在线，但页面显示离线，参考错误码：13008方案处理。\n- 该集群组下安装了proxy并且proxy服务显示在线：\n  出现这种情况主要原因是proxy无法消费集群组topic的数据。\n    - 在kafka服务的安装目录执行下面命令，查看是否有proxy在消费集群组topic的数据：\n      ```shell\n      ./kafka-consumer-groups.sh --bootstrap-server 127.0.0.1:9092 --group snc-ng-consumer --describe\n      ```\n    - 查看proxy启动时的日志：\n        - 修改proxy日志级别为DEUBG并启动proxy服务。\n        - 搜索日志关键字`KafkaConnector`过滤出proxy消费topic的日志，查看是否有启动消费或有报错，再做进一步处理。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "2b8f428c-7c80-47cb-aef8-d4a47442ccfa",
+                  "title": "三九、本地shell类型识别失败，aix系统执行本地脚本失败（错误码：10005）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "968ecd29-30d6-4503-b2b8-f0ad807eff12",
+                        "title": "1. 修改日志级别为DEBUG级别，然后重启服务，查看日志是否有`ExitCode: 127`的日志输出。\n   如果有该日志输出，即服务使用的jre文件未授权可执行权限。\n   在安装目录下执行命令`chmod -R +x jre`进行授权，然后重启服务。\n2. 脚本里面不能指定使用`#!/bin/bash`，aix不支持bash。可以指定`#!/bin/sh`或`#!/bin/ksh`\n3. 执行下面命令，并将结果反馈给相关技术人员\n  - bash -c \"echo snc-ng-agent-shell-check\"\n  - sh -c \"echo snc-ng-agent-shell-check\"\n  - ksh -c \"echo snc-ng-agent-shell-check\""
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "fc577f0e-c6b1-4103-b639-c86bd92bfbe4",
+                  "title": "四十、proxy的http请求转发下载超大文件或并发下载大文件失败",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "9b27b9bd-cfc8-4aac-a261-a6e7ebb674be",
+                        "title": "修改proxy的启动脚本snc_ng_server.sh，找到并修改启动参数`-XX:MaxDirectMemorySize=`并加大参数值"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "9498ecb5-6f5e-47a1-898b-3753e601b657",
+                  "title": "四一、非正常停止程序（错误码：10006）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "7a157aec-7ab1-44c2-89d1-48a1dbbcbef9",
+                        "title": "没有使用自带的脚本命令`snc_ng_server.sh stop`来停止程序，而是使用了其它方式退出程序如：`kill pid`或`kill -9 pid`，   \n又或者是因为主机关机或重启导致程序退出。   \n如果需要停止程序请使用上面自带的脚本命令自己，或在页面上停止。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "8adb806b-09fa-44ba-ba00-bc5c42f09c03",
+                  "title": "四二、消息回送失败（错误码：20008）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "cf139d10-5c60-4b4a-87db-4804befac40e",
+                        "title": "出现这个错误是agent无法发送消息给proxy，一般有以下几个情况：\n- 无可用的proxy服务\n  出现该错误提示表示agent无法连接到所有proxy，排查方式：\n  1. 检查agent配置文件中的proxy是否正确。\n  2. 检查所有proxy服务是否在线并且正常运行，如果在线，查看proxy的日志是否有错误。或者通过其它方式确认proxy是否正常。\n  3. 检查agent主机与所有proxy的主机网络是否连通。\n\n- 所有连接的proxy服务不可用\n  出现该错误提示表示proxy服务是在运行的，但无法接收消息，一般是proxy接收数据流量达到上限，解决方案：\n  1. 修改proxy的启动脚本snc_ng_server.sh，找到并修改启动参数`-XX:MaxDirectMemorySize=`并加大参数值。\n  2. 如果集群下部署了多个agent，给proxy集群增加更多的proxy来分压。\n\n- 目标proxy[xxx]未连接上\n  出现该错误提示表示agent无法连接上指定的proxy，排查方式：\n  1. 检查该proxy服务是否在线并且正常运行，如果在线，查看proxy的日志是否有错误。或者通过其它方式确认proxy是否正常。\n  2. 检查agent主机与该proxy的主机网络是否连通。\n\n- 目标proxy[xxx]服务不可用\n  出现该错误提示表示该proxy服务是在运行的，但无法接收消息，一般是proxy接收数据流量达到上限，解决方案：\n  1. 修改proxy的启动脚本snc_ng_server.sh，找到并修改启动参数`-XX:MaxDirectMemorySize=`并加大参数值。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "a926f1b7-4c4d-4f60-bffe-cc24d8553cc3",
+                  "title": "四三、虚拟VIP等使用非主机本地网卡的安装部署",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "e2d94768-acf3-4df7-83c7-80e2ad1a33c5",
+                        "title": "根据需要改对应的服务\n- proxy安装添加或修改以下配置\n   ```properties\n   # 虚拟ip或指定ip，该ip会用来管理proxy，对proxy进行升级、启停操作，需要开通snc-ng-server的访问权限\n   proxy.ip=192.168.1.10\n   # 禁用本地网卡ip检测\n   proxy.ignore.check.ip=true\n   # 监听IP，用来管理agent，需要开通snc-ng-agent的访问权限\n   proxy.listen.ip=10.10.1.27\n   ```\n- agent安装添加或修改以下配置\n   ```properties\n   # 虚拟ip或指定ip，该ip会用来管理agent，对agent进行升级、启停操作，需要开通snc-ng-proxy的访问权限\n   agent.ip=192.168.1.10\n   # 禁用本地网卡ip检测\n   agent.ignore.check.ip=true\n   ```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "17819056-3517-49af-8b71-3f89db4c80a9",
+                  "title": "四四、proxy有多个网卡，与snc-ng-server和snc-ng-agent使用不同的网段通信",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "d5847fb0-0d68-491d-beb5-a605faff9be1",
+                        "title": "proxy安装添加或修改以下配置\n```properties\n# 该ip会用来管理proxy，对proxy进行升级、启停操作，需要开通snc-ng-server的访问权限\nproxy.ip=192.168.1.10\n# 禁用本地网卡ip检测\nproxy.ignore.check.ip=true\n# 监听IP，用来管理agent，需要开通snc-ng-agent的访问权限\nproxy.listen.ip=10.10.1.27\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "905819e3-579f-44e2-922c-31005938164c",
+                  "title": "四五、消息回送失败（错误码：10007）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "19855c38-b88b-4f0d-840d-3f0b30088d22",
+                        "title": "1. 非法连接，请确认proxy端和agent端都开启了ssl安全通信，查看配置文件：\n```properties\n# proxy端是否已经加了该配置\nproxy.netty.ssl.enable=true\n\n# agent端是否已经加了该配置\nagent.netty.ssl.enable=true\n```\n2. 是否有修改过ssl相关配置，如：证书密码和证书文件。如有修改，请确认证书配置是否确认，证书文件是否可用"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "dd8cfe54-67c9-465c-a885-f5fac3b87ee4",
+                  "title": "四六、监控脚本下载失败（错误码：11002）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "28bc2a93-f197-4fb6-807f-5bd4db461d00",
+                        "title": "出现该错误时，高于0.10.5版本的代理会在错误里面一起输出监控脚本的下载地址，低于该版本可以在错误日志前后找一下看有没有输出下载地址，如果未找到，\n一般默认为snc-ng-server服务的地址：http://{snc-ng-server-IP}:10085/snc-ng-server/monitorScript/download\n\n拿到下载地址后用别的工具尝试下载监控脚本，如curl命令，确保下载地址可以在代理的机器上可以正常下载:\n- proxy下载失败的，直接在proxy的机器尝试用工具访问下载地址来下载监控脚本。\n- agent下载失败的，因为agent一般是不让直连snc-ng-server服务，需要通过proxy来下载，所以需要尝试proxy集群的每一个proxy都去下载监控脚本，要确认全部proxy能正常下载监控脚本。\n- 如果已经排除掉不是网络策略问题导致下载失败的，请根据《监控脚本未同步排查指导》节点进行进一步的排查。\n\n如果网络策略问题导致snc-ng-proxy无法通过下载地址下载监控脚本，可以修改snc-ng-server的以下两个配置之一指定proxy的可下载地址：\n```properties\n## 注意以下配置是两选一，修改其中一个即可\n\n# （优先修改该配置）snc-ng-proxy访问snc-ng-server服务的地址，用于解决proxy无法直连snc-ng-server的10085端口\nsnc.server.server-url=http://192.168.1.100:8080/snc-ng-server\n# 当前上面配置不能修改或无法解决时，可以使用该配置。配置作用是配置监控脚本的完整下载地址，该地址要确保proxy能下载监控脚本\nshsnc.monitor.scriptDownloadUrl=\n```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "e30f2643-b045-49b4-b0fe-b2e623021fbd",
+                  "title": "四七、Windows使用指定用户启动agent",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "59590fa9-f1a0-4bbd-a8d7-1cb0de3469d8",
+                        "title": "`bin/conf/wrapper.conf`直接以下配置：\n```properties\nwrapper.ntservice.account=username\nwrapper.ntservice.password=password\n```\n官方配置说明：https://wrapper.tanukisoftware.com/doc/english/prop-ntservice-account.html"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "8d028427-27da-418e-b858-8ab59d464101",
+                  "title": "四八、非正常停止程序（错误码：10008）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "583277f9-2d35-4c14-bd8e-82405724cdee",
+                        "title": "系统时间有被修改。系统时间修改会导致任务运行错乱，所以程序停止运行，阻止任务运行导致数据错乱。如果设置了相关自保护功能，程序会自动启动，如果未设置自保护功能或长时间未启动，则需要人工启动程序。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "9b6e68ff-fb79-4128-a11d-f1230fc1003c",
+                  "title": "四九、监控端口被非法访问（错误码：10009）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "f3f9b856-14dc-42bd-a27e-b6ceb1f8bfa1",
+                        "title": "输出以下其中错误日志或信息：\n- zabbix[x.x.x.x] is not allowed to access\n- the ip x.x.x.x is not allowed to access\nagent的监控端口默认只能接收zabbix主机发过来的数据，其它主机连接该端口都会被拒绝，该问题主机涉及到下面两个配置：\n```properties\n# 注意：下面配置的xxx表示是proxy或agent\n# 监控端口，用来接收zabbix服务的数据\nxxx.monitor.zabbix.receivePort=10032\n# zabbix服务的ip，默认只有这个ip才能往监控端口发送数据，其它ip会被拒绝访问\nxxx.monitor.zabbix.serverIp=192.168.2.100\n```\n解决方法：\n先确认报错信息中的zabbix ip是否没错\n  - 如果确认报错信息中的zabbix ip不是配置上zabbix主机会使用到的ip，请检查采集资源配置的zabbix是否正确。\n  - zabbix主机有多个ip，使用了其它ip连接agent或proxy，或者是如NAT等网络环境配置导致了proxy或agent接收到的ip不是配置文件的ip，\n    总之如果确认zabbix ip是没问题的，可以增加下面配置解决：\n    ```properties\n    # 监控端口接收数据的IP白名单，xxx需要改成对应的proxy或agent，值设置为all时表示接收所有ip请求\n    xxx.monitor.zabbix.receiveAllowIps=192.168.2.100\n    ```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "a734ba83-4d13-4148-81a3-cdcd59065325",
+                  "title": "四九、监控端口被非法访问（错误码：10009）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "80375ed3-d7bc-4d84-870d-bafa16c3d824",
+                        "title": "输出以下其中错误日志或信息：\n- zabbix[x.x.x.x] is not allowed to access\n- the ip x.x.x.x is not allowed to access\nagent的监控端口默认只能接收zabbix主机发过来的数据，其它主机连接该端口都会被拒绝，该问题主机涉及到下面两个配置：\n```properties\n# 注意：下面配置的xxx表示是proxy或agent\n# 监控端口，用来接收zabbix服务的数据\nxxx.monitor.zabbix.receivePort=10032\n# zabbix服务的ip，默认只有这个ip才能往监控端口发送数据，其它ip会被拒绝访问\nxxx.monitor.zabbix.serverIp=192.168.2.100\n```\n解决方法：\n先确认报错信息中的zabbix ip是否没错\n  - 如果确认报错信息中的zabbix ip不是配置上zabbix主机会使用到的ip，请检查采集资源配置的zabbix是否正确。\n  - zabbix主机有多个ip，使用了其它ip连接agent或proxy，或者是如NAT等网络环境配置导致了proxy或agent接收到的ip不是配置文件的ip，\n    总之如果确认zabbix ip是没问题的，可以增加下面配置解决：\n    ```properties\n    # 监控端口接收数据的IP白名单，xxx需要改成对应的proxy或agent，值设置为all时表示接收所有ip请求\n    xxx.monitor.zabbix.receiveAllowIps=192.168.2.100\n    ```"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "179c12a5-4a00-44e6-9549-6b9b86138813",
+                  "title": "五十、下发消息给agent失败（错误码：11003，11004）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "12d80c5c-e598-436f-baf8-fa97b3b0ae94",
+                        "title": "proxy集群中部分proxy无法与报错的ip主机上的agent通信，导致无法下发消息，按下面方式进行逐步排查：\n1. 确认agent主机与proxy集群中的全部proxy主机网络连通。\n2. 确认agent与全部proxy是正常连接的，在agent的详情面的“链接情况”功能可以查看。\n3. 如以上都确认没问题，请找出报该错误的proxy里面的日志出来，联系相关技术人员进行进一步排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "f030d2c5-897e-424f-9d2e-a44437e69a6c",
+                  "title": "五一、agent进程运行资源说明",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "9aa5ff1c-e903-4594-a8db-e0574e485d8c",
+                        "title": "- agent实际运行内存比分配的内存要高很多\n如：修改agent的内存大小为64M，但实际采集到的内存大小数据可能为150多M，原因如下：\njava程序的内存分成两部分，一部分是堆内内存，这个是可控的，可以自行调整；还有一部分是堆外内存，jvm会根据不同的系统和主机性能，一般额外再占到100M到200M内存，这部分是不可控的，可能会更多。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "b7893a96-818e-4411-9976-23a43d68758e",
+                  "title": "五二、不支持的监控项key（错误码：10010）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "4c380e33-84f1-40d1-983c-b6e8d5d9880a",
+                        "title": "- 报错内容：unsupported metric key: xxx.xxx   \n其中`xxx.xxx`为监控项key，出现该提示表示该监控项key不支持采集。排查方式：\n1. 如果是AMP监控采集功能报了该错误，\n   - 请先确认监控项key是用proxy或agent采集还是zabbix那边采集，并且检查监控项配置的采集方式，只有`Snc agent`、`Zabbix agent`和`Zabbix agent(active)`三种方式是通过proxy或agent采集的，其它都是在zabbix那边处理。\n   - 如果确认监控项key写法和采集方式都没错，参考下面第2点排查。\n2. 不管是不是AMP监控采集功能报了该错误，先用该命令查询确认当前版本的proxy或agent所支持的监控项key：java -jar snc-ng-proxy*.jar cmd metricKeyDesc excludeParam\n   - 根据命令输出的监控项说明检查`xxx.xxx`是否有对应的key，并且写法是否是正确的。\n   - 如果未找到对应的监控项说明，确认proxy或agent是否有新版本并且支持该key。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "63db0ce7-8a6f-4de4-9b73-c46f8d1a07ea",
+                  "title": "五三、网络不通",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "f9d2f3e1-e3ad-4c3d-a3a4-7f56ecd144f5",
+                        "title": "- 报错内容里面有出现：`Connection refused (Connection refused)` 或是 `拒绝访问`\n出现该错误提示表示对端服务器端口无法访问，下面是提供的一些排查思路但不限于下面的排查方式，根因是端口无法访问，请根据实际的网络环境进行排查\n1. 确认服务正常运行并且端口是启用的。\n2. 检查防火墙配置是否有放通网络。\n3. 使用如`telnet`之类的工具测试网络是否能连通。\n4. 也可以使用proxy和agent自身提供的端口连通测试工具：`./jre/bin/java -jar snc-ng-agent-*.jar cmd portTest=ip:port`"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "e83750dc-15d5-45df-92a5-b01586529f37",
+                  "title": "五四、Windows计数器采集问题（错误码：13011）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "ecc3c83e-4360-4386-9b1b-5280040af60c",
+                        "title": "- 报错内容里面有出现：`exit code: xxx`\n    xxx为错误码，请根据微软官网的错误码表进出初步排查：https://learn.microsoft.com/zh-cn/windows/win32/perfctrs/pdh-error-codes\n- 没有错误码的联系技术支持协助排查"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "c5415765-6e5d-438e-960b-41449d9d8792",
+                  "title": "五五、守护进程关联的proxy与对应agent的不一致（错误码：10011）",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "38c72cc5-7457-475c-851f-1b0730cb73f9",
+                        "title": "该问题是守护进程实际连接的proxy集群与agent实际连接的proxy集群不致导致的，一般是agent实际连接的proxy集群与agent配置文件上的不一致，如：用户手动修改了proxy配置，但没有重启agent。\n请登录到agent主机检查以下几点（注意：一定要登录到主机检查）：\n   1. 检查Agent配置文件的proxy是否与页面上关联的proxy集群一致。\n   2. 检查守护进程配置文件里面的agent安装路径是否与Agent详情上的路径一致。\n\n修复配置文件或确认配置无误重启守护进程和Agent解决。   \n如果无法登录主机，尝试以下操作解决：\n   1. 先尝试重启Agent看能不能解决。\n   2. 如果重启Agent无法解决，尝试重新升级守护解决。"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "e19710fa-6f1c-4630-95cd-dc06b2ed2297",
+            "title": "监控采集常见问题",
+            "children": {
+              "attached": [
+                {
+                  "id": "3839540d-dae1-4d45-8734-49e70a3cf093",
+                  "title": "proxy和agent的采集功能完全相同，区别点一般是proxy对接zabbix_server，agent对接zabbix_proxy，下面问题同时适用于proxy和agent排查，zabbix_server和zabbix_proxy也统称为`zabbix`。"
+                },
+                {
+                  "id": "706af646-d3bc-4a53-9a05-931bd6230704",
+                  "title": "proxy和agent的监控采集问题初步定位和判断该联系谁处理和支持",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "17d53437-3a44-4dd0-aa54-5903ec84443f",
+                        "title": "正常一般情况下proxy和agent是接收到zabbix发过来的《发送设备名》监控项之后才会去采集数据，并在采集到数据之后会立即发送回zabbix，\n在这期间出现的采集问题属于proxy和agent自身采集的问题，可以先联系中台组的相关支持技术人员协助，此外情况请先监控组的相关支持技术人员协助。   \n判断依据可根据实际采集的代理的日志进行判断，按下面步骤查询日志是否存在下面日志内容：\n1. 搜索关键字`agent.activehost[hostname]`，hostname为实际采集名称，如果不存在该日志，表示zabbix未发送设备名给proxy或agent，请先检查资源采集配置是否正确，或先联系监控组的相关支持技术人员协助排查。\n2. 如果第1点日志存在，搜索采集名称，可以查该资源的相关采集日志，再进一步搜索监控项key，可以搜索指定监控项的采集日志，查看日志是否有异常错误信息，如果有就联系中台组的相关支持技术人员协助。\n3. 搜索采集名称和关键字`send data to zabbix is success`，如果存在该日志，表示proxy或agent已经采集完成，并且已经将数据发送给zabbix，请先检查zabbix端服务是否有问题，然后先联系监控组的相关支持技术人员协助排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "075a2ee2-173d-45ae-995c-959a45d365ae",
+                  "title": "一、监控采集问题排查步骤指导",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "9c9b0f21-c7ac-485e-af71-7c2b2d8f89e2",
+                        "title": "正常采集情况下按监控资源采集名称搜索运行日志会搜到下面日志内容，如搜索采集名称`linux_192.168.33.152`：\n```text\n1. receive zabbix message: agent.activehost[linux_192.168.33.152]\n2. sync metric config from zabbix：[linux_192.168.33.152]\n3. monitor_linux_192.168.33.152_snc.script20 - 添加到定时任务列表, 下次调度: 0220 172728\n4. monitor_linux_192.168.33.152_snc.script20 - execute monitor collect: snc.script.cmd.ProTotal[\"cmd\",\"ss -antu|grep ^tcp|wc -l\"]\n5. monitor_linux_192.168.33.152_snc.script20 - execute monitor collect result: 23\n6. monitor_linux_192.168.33.152_snc.script20 - add to zabbix message queue, size: 1\n7. monitor_linux_192.168.33.152_snc.script21 - 添加到定时任务列表, 下次调度: 0220 172728\n8. monitor_linux_192.168.33.152_snc.script21 - execute monitor collect: snc.script.cmd.ProTotal[\"cmd\",\"vmstat 1 2|tail -1|awk '{print $2}'\"]\n9. monitor_linux_192.168.33.152_snc.script21 - execute monitor collect result: 0\n10. monitor_linux_192.168.33.152_snc.script21 - add to zabbix message queue, size: 1\n11. send data to zabbix is success:true, host and size:{\"linux_192.168.33.152\":2}\n```"
+                      },
+                      {
+                        "id": "1e1807a0-c98c-4676-8bcf-f9d3fbc03ca5",
+                        "title": "根据上面日志输出情况分析agent的采集状态。",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "d6127fd7-00ec-4689-ab35-124653669d51",
+                              "title": "一、第1行日志：agent.activehost[xxx]",
+                              "children": {
+                                "attached": [
+                                  {
+                                    "id": "81493650-99b6-4d59-ab39-ac7ca48814aa",
+                                    "title": "第1行是agent接收zabbix通知被告知需要采集的监控资源名称。   \n如果没有接收该通知，主要原因是zabbix没给agent发送通知，属于外部原因，应该从外部开始排查。   \n排查方向：\n- agent配置文件的监控配置是否正确。\n- agent的监控端口是否能访问，zabbix是否能与agent监控端口连接。\n- 监控平台上的监控资源配置是否正确：\n    - 监控资源的监控模式下的采集配是否正确，主要检查是agent的ip和端口是否无误。\n    - 监控资源的监控模板是否有配置“发送设备名”监控项，并且采集方式为“Zabbix agent”模式和处于启用状态。"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "id": "5a9c0073-116a-41bf-975b-180e5a7966e7",
+                              "title": "二、第2行日志：同步监控配置",
+                              "children": {
+                                "attached": [
+                                  {
+                                    "id": "a78c023e-9bce-40b8-979a-7e7ef0552de9",
+                                    "title": "第2行根据监控资源名称向zabbix同步监控项配置。   \n这一步是agent向zabbix发起请求获取监控设备的监控项配置   \n如果没有输出该日志的排查方向：\n- 确认是否有接收到第一行日志。\n- 查看运行日志是否什么错误日志，可以使用该命令模拟这一步：./jre/bin/java -jar snc-ng-agent-*.jar cmd 'metric=agent.host.getItems[资源采集名称]'\n    - 根据错误分析具体原因并解决。"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "id": "e011b44a-792f-4861-82bc-34c82b9766c7",
+                              "title": "三、第3~10行日志：监控项采集记录",
+                              "children": {
+                                "attached": [
+                                  {
+                                    "id": "c8f345ab-3c9b-4105-b5c5-56eeb9e4a1a0",
+                                    "title": "第3~6和7~10行是分别是两个监控项采集调度过程，以3~6行这个监控项采集为例。   \n第3行是监控项到时触发执行采集，并生成下一次采集任务。   \n第4行是监控项开始执行采集。   \n第5行是监控项采集执行结果并打印采集结果。   \n第6行是监控项将采集结果放到待发送队列。   \n日志中的`monitor_linux_192.168.33.152_snc.script20`其中linux_192.168.33.152为资源采集名称，snc.script20为特定的监控项，第一次采集根据key生成。   \n可以用后面部分`linux_192.168.33.152_snc.script20`搜索特定监控项的全部采集记录和过程。   \n如果INFO级别日志只出现这4行日志表示agent在正常采集，请根据下面第9行的结果进行进一步排查。   \n如果这4行日志采集过程中有错误日志，则表示可能采集失败（注意出现错误并不表示就一定是采集失败，有些监控项虽然报错了，但也有对应的采集结果返回）   \n采集失败排查步骤：\n1. 从第4行日志后面获取到监控项key。\n2. 确认监控项key是否正确、参数顺序是否没错，可以根据手册上面的监控项key格式对比，或者执行命令查看当前版本支持的监控项：./jre/bin/java -jar snc-ng-agent-*.jar cmd metricKeyDesc。\n3. 如果key的参数有宏变量，查看资源的监控配置里面的宏参数值是否无误。\n4. 在agent同一个机器上使用其它工具验证参数是正确无误的，并确认agent的机子是可以正常访问被采集资源的服务。\n5. 上面几步确认无误后，将key里面的宏参数替换成真正的值，然后用测试命令验证：./jre/bin/java -jar snc-ng-agent-*.jar cmd 'metric=监控项key'。\n6. 查看运行日志找到错误日志，自己初步分析下看能否找到原因。\n7. 对比下面章节的常见错误，查看是否有相同或类似的问题和解决方案。\n8. 如果以上步骤未能解决问题，记录下初步排查结果，找相关负责人安排技术人员进行进一步排查，并把初步排查结果结论发送技术人员以便分析和快速定位问题。"
+                                  }
+                                ]
+                              }
+                            },
+                            {
+                              "id": "915c9cf1-8db3-40a3-b6cd-ede65b3c0477",
+                              "title": "四、第11行日志：发送采集结果给zabbix",
+                              "children": {
+                                "attached": [
+                                  {
+                                    "id": "c582a8f9-80b9-40b1-baa7-2046621bf585",
+                                    "title": "- 出现这一行日志并且success值为true，表示agent已经完成采集并将结果发送给zabbix，如果采集结果无法显示，问题不在agent这端，请从zabbix端开始往后排查。   \n- 如果success值为false，也表示agent已将结果发送到zabbix端了，但zabbix处理数据失败，请从zabbix端开始排查。\n- 如果未输出该行日志，而输出“发送采集数据到zabbix失败”，查看具体的错误信息，一般是zabbix无法连接，确认agent当前是否能与zabbix的端口通信。"
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "84e9a363-c892-465e-ab2a-cca63129f313",
+                  "title": "二、采集出现错误日志",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "5b9a7417-cfb2-4812-84f7-93455cd2e7b7",
+                        "title": "如果在下面没找到错误描述，请先到baidu或google等搜索引擎搜索一轮，一般都能找到错误的原因。\n\n- can't find file name [xxx.xx]   \n  无法找到监控脚本文件，到config/monitor目录下确认是否有相关的脚本。\n\n- jdbc.xxxx cannot find in jdbc sql.properties config   \n  jdbc采集的监控项key在sql.properties配置文件中未找到对应的key和sql语句。\n\n- in the mib.yml not contains discovery item   \n  snmp自发现采集在mib.yml中未找到对应key的配置\n\n- java.lang.outofMemoryError: unable to create new native thread   \n  线程创建失败，确认是否监控设备过多，单个设备默认分配5个线程，查看是否超过系统限制\n   ```shell\n   # 查看进程当前线程数\n   ps -eLf |grep pid |grep -v grep |wc -l\n   # 查看系统线程数限制\n   ulimit -u\n   ```\n  解决方案：\n    1. 增加采集服务proxy或agent来分担压力（推荐）。\n    2. 修改配置文件，将下面配置项适量改小，两项的值要设置成一样。\n   ```properties\n   #主动模式线程池最小线程数[默认值：5]\n   proxy.container.threadPools.monitor.corePoolSize=5\n   #主动模式 线程池最大线程数[默认值：5]\n   proxy.container.threadPools.monitor.maximumPoolSize=5\n   ```\n\n- java.lang.outofMemoryError: Java heap space   \n  内存溢出，出现该错误可能是采集监控项太多，确认当前采集监控项总数，proxy不超过10W个监控项，agent不超过6k个监控项。\n\n  解决方案：\n    1. 增加采集服务来分担压力（推荐）。\n    2. snc-ng-agent通过修改启动文件 snc_ng_server.sh 的启动参数，增加服务运行内存。\n\n- java.lang.ArrayIndexOutOfBoundsException: n   \n  n为一个数字，监控项key缺少必填参数。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "170f1042-16d6-4cfa-b3d9-a1968ac2ecbf",
+                  "title": "三、proxy或agent不采集",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "504fe668-c0cf-441d-ae16-94f1d06c4497",
+                        "title": "1. 检查配置是否开启监控功能。\n2. 确认zabbix服务是否正常，并且proxy或agent与对应的zabbix_server或zabbix_proxy能正常连通。\n3. 检查日志是否有输出 `agent.activehost[xxx]`，表示接收到需要采集的资源xxx，如果无该日志，请确认资源监控配置是否正确和zabbix端服务是否正常。\n4. 使用`agent.host.getItems[hostname]`key测试是否能同步到这些监控项，如果同步不到，表示zabbix端无监控配置，请确认zabbix端是否正常和资源监控配置是否正确。\n   1. 先检查配置文件的zabbix与页面上资源监控配置的zabbix是否是一致。\n   2. 如果排查页面的资源监控配置没问题，则需要检查zabbix端是否正常，请先自行初步排查，如查看zabbix日志等。zabbix端问题如果需要协助可联系监控组的同事帮忙排查。\n5. 如果第3、4步正常，请根据第一节《监控采集问题排查步骤指导》进行进一步排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "febcf2ba-65ea-4ddd-a720-5d77908cd223",
+                  "title": "四、部分监控项不采集",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "8d0c88b0-bb39-490a-8c81-c6bccbac40d4",
+                        "title": "1. 使用`agent.host.getItems`key测试是否能同步到这些监控项。\n2. 如果未同步到监控项，查询监控配置是否正确。\n3. 如果能同步到监控项，web端查看监控项是否有错误信息。\n4. 根据第一节《监控采集问题排查步骤指导》第三点进行排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "c572c2ec-fc82-49e2-ae90-2909881d11a9",
+                  "title": "五、断采",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "d6143204-d0bb-44c6-bd02-e5e217f4545d",
+                        "title": "1. 查看日志，断采的监控项断采时是否有采集错误，或是否采集结果为空。\n2. 开启DEBUG或TRACE日志，收集断采时的日志。\n3. 根据第一节《监控采集问题排查步骤指导》第三点的方式过滤出该监控项的所有采集调试日志进行分析。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "72a083a8-1c5b-4c35-8cc4-8014a61c4fdf",
+                  "title": "六、服务无法连接或连接超时，IP和端口都无误，使用telnet命令能连通",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "23f89dd9-a8a8-4b75-a5f8-1a7eed1dc458",
+                        "title": "- 应该是DNS解析问题\n  - 修改目标主机的`/etc/hosts`文件，增加本机ip和主机名。   \n    目前遇到过这问题的设备类型：`jmx`、`weblogic`和`oracle`\n     ```text\n     192.168.100.100  目标主机的hostname\n     ```\n  - 也可能是主机名冲突引起的DNS解析问题\n    - 查看本机与目标服务器主机的hostname是否一样，如果一样则需要修改其中一个。\n    - 查看本机的`/etc/hosts`是否存在目标服务器主机hostname的映射，并且ip不是目标主机，如果是，修改为目标主机ip。\n  \n- jmx服务解决方法：https://www.jianshu.com/p/b7790c9eabff   \n   jmx服务的启动命令增加参数`-Djava.rmi.server.hostname=本机ip`绑定本机ip"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "c078a9d1-7ca8-45dd-802b-18f670e828aa",
+                  "title": "七、proxy或agent的snmp协议无法采集到数据，但snmpwalk命令能获取数据",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "7756f333-710b-4d9c-a10c-bc070a3f8893",
+                        "title": "1.普通监控项采集无数据",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "fe7a5200-dc8b-4f6b-b07b-a3a8fa58e4ee",
+                              "title": "snmpwalk 命令是会扫描oid下面所有的子oid出来，如果刚好只有一个子oid，就会看起来像是获取到数据，实际获取的是子oid的数据。   \nproxy或agent的snmp采集是类似snmpget命令方式获取数据，只能采集叶子oid的数据，不能采集父oid的数据。\n理论上snmpget方式能获取到数据的，proxy或agent就能采集到数，要以snmpget方式为准。"
+                            }
+                          ]
+                        }
+                      },
+                      {
+                        "id": "f0f34ba7-1632-4b78-a501-d3eeb3ce7d35",
+                        "title": "2.自发现监控项采集无数据",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "5278408d-bd79-439f-8675-33cfc33f2d41",
+                              "title": "- 先确认配置是否正确，mib.yml里配置的oid与snmpwalk命令的一致\n- 使用proxy或agent自带的snmp工具测试oid获取数据的情况：`./jar/bin/java -jar snc-ng-agent-*.jar cmd snmpTest help` \n- 浪潮或中兴的设备，尝试将mib.yml配置里的oid倒序写入：\n  ```yaml\n  # 原来配置方式\n  snmp.discovery.Inspur:\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.1, name: diskIfIndex, alias: SNMPVALUE}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.2, name: diskIfCapacity}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.3, name: diskIfCF}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.4, name: diskIfCU}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.5, name: diskIfRS}\n  ```\n  ```yaml\n  # 改成倒序配置\n  snmp.discovery.Inspur:\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.5, name: diskIfRS}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.4, name: diskIfCU}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.3, name: diskIfCF}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.2, name: diskIfCapacity}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.1, name: diskIfIndex, alias: SNMPVALUE}\n  ```\n- 如果全部确认无误，尝试增加下面配置并把值调小：\n  ```properties\n  # 原本默认值50\n  agent.snmp.maxNumRowsPerPDU=10\n  # 原本默认值10\n  agent.snmp.maxNumColumnsPerPDU=5\n  ```\n- 如果自发现采集的数据量很大，可尝试将自发现拆成多个自发现监采集，如果一次性采集数据量过大，有些snmp性能差的设备会处理不过来：\n  ```yaml\n  # 原来配置方式\n  snmp.discovery.Inspur:\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.1, name: diskIfIndex, alias: SNMPVALUE}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.2, name: diskIfCapacity}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.3, name: diskIfCF}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.4, name: diskIfCU}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.5, name: diskIfRS}\n  ```\n  ```yaml\n  # 修改为\n  snmp.discovery.Inspur1:\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.1, name: diskIfIndex, alias: SNMPVALUE}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.2, name: diskIfCapacity}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.3, name: diskIfCF}\n  snmp.discovery.Inspur2:\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.1, name: diskIfIndex, alias: SNMPVALUE}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.4, name: diskIfCU}\n    - {oid: 1.3.6.1.4.1.25506.1.8.7.1.1.5, name: diskIfRS}\n  ```"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "f841c781-0112-438f-a5f5-eb0570a759d8",
+                  "title": "八、oracle数据库采集连接超过配置限制",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "32a727b3-bad4-4920-b327-9b9fd7c5b0e5",
+                        "title": "当sql执行超时时，程序本地会关闭连接，但oracle数据库的机制不会马上关闭，直到sql执行结束才会释放连接。   \noracle官方说明：https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/JDBC-troubleshooting.html#GUID-E846B7AB-4032-473B-8E2F-E741FDD97012\n\n- 从日志中找到执行超时的sql，尝试从sql上做优化解决。\n  - 目前遇到下面sql会出现查询超过，在数据库无数据无其它连接时查询偶尔会出现查询几十秒的情况：   \n    select count(*) as BCNT from v$lock where block=1\n\n- 从oracle数据库端解决：\n  1. 创建PROFILE :   \n     SQL>create profile sess limit sessions_ per user 10; --最大连接数限制为20\n  2. 将PROFILE指定给用户:   \n     SQL>alter user SHSNC profile sess;"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "15b49a4d-3808-4c05-813c-ae954a4ace35",
+                  "title": "九、数据库连接失败，连接不上，无法连接",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "e1d1328d-677b-44a7-ac02-0a29ee181ec7",
+                        "title": "- 数据库连接失败最常见是连接参数不正确，请一定要先确认参数是否正确，包含账号、密码、IP、端口和连接串\n- 确认proxy或agent本机与数据库网络是否能连通，可使用命令验证：`./jre/bin/java -jar snc-ng-agent-*.jar cmd portTest=ip:port`\n- 确认数据库是否有白名单配置\n- 使用proxy或agent自带的测试命令验证监控项key"
+                      },
+                      {
+                        "id": "a3417fa4-5d91-4573-8b01-635c3c371ec1",
+                        "title": "数据库一些常见错误",
+                        "children": {
+                          "attached": [
+                            {
+                              "id": "27c9e402-16eb-4078-b717-a8a9ddf2014c",
+                              "title": "- Oracle报错：ORA-12514, TNS:listener does not currently know of service requested in connect descriptor   \n   确认连接参数是否正确，包含账号密码连接串，尤其是连接串，oracle的连接串有多种写法，请根据连接方式确认是否写正确，更多信息请网上搜索“jdbc oracle 连接串”\n  - 方法一:使用service_name -> jdbc:oracle:thin:@//host:port/service_name     \n    例如：jdbc:oracle:thin:@//192.168.1.1:1521/service_name\n  - 方法二: 使用SID -> jdbc:oracle:thin:@host:port:SID   \n    例如：jdbc:oracle:thin:@10.10.10.1:1521:orcl\n  - 方法三：使用tnsname -> jdbc:oracle:thin:@TNSName   \n    例如：jdbc:oracle:thin:@TNS_ALIAS_NAME\n  \n- Mysql报错关键字：Communications link failure   \n  - 数据库无法连接，请先确认连接参数是否正确，尤其是账号、密码、IP和端口。\n  - 如果是采集本机的数据库，连接地址用127.0.0.1和本机ip都试一下，有时候只能用127.0.0.1连，有时候只能用本机IP连。\n  - 如果数据库版本是5.x的，可以尝试在url加上useSSL=false参数，如：jdbc:mysql://192.168.0.1:3306/db_name?useSSL=false\n\n- SqlServer报错：“Encrypt”属性设置为“true”且“trustServerCertificate”属性设置为“false”\n   或：\"encrypt\" property is set to \"true\" and \"trustServerCertificate\" property is set to \"false\"\n  - 在数据库的连接url后面加上参数`encrypt=false`或者`encrypt=true;trustServerCertificate=true`，如：\n    - jdbc:sqlserver://localhost:1433;databaseName=TestDB;encrypt=false\n    - jdbc:sqlserver://localhost:1433;databaseName=TestDB;encrypt=true;trustServerCertificate=true\"\n  - 如果修改url参数还是不行，参考下面地址的方法一，修改jre的文件`java.secrity`\n    - https://blog.csdn.net/m0_61869253/article/details/136505805\n\n- SqlServer报错：The server selected protocol version TLS10 is not accepted by client preferences [TLS13, TLS12]   \n  - 修改代理自带jre文件`jre\\lib\\security\\java.security`下面内容：\n    - 找到配置`jdk.tls.disabledAlgorithms`，然后去掉 `TLSv1` `TLSv1.1` 两个配置，然后重启proxy服务即可。\n    - 如果去掉上面说的配置之后还不行，可以再尝试去掉 `3DES_EDE_CBC` 之后再试。\n  - 注意，修改是代理自带的jre文件，如果代理不是用自带jre启动服务的，就修改系统jdk对应的jre文件。"
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "78036ac1-27b8-4421-b9ac-7fdec8da05ad",
+                  "title": "十、Redis采集常见问题",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "84f292d3-70c8-4de7-96fe-717329d79f14",
+                        "title": "- 报错信息：NOAUTH Authentication required.\n   Redis服务设置了连接认证，需要设置用户名和密码或只设置密码，如：`api.redis.info.xxx[ip,port,shsnc:shsnc123456]`\n  - 如何验证Redis是否设置了连接认证：\n    - 使用telnet命令连接到redis的端口，使用输入`PING`，返回`PONG`表示未设置；返回`NOAUTH Authentication required.`表示有设置。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "b82b6f44-abdb-4453-9480-05c544bc0b7d",
+                  "title": "十一、脚本采集密码参数会在执行命令明文显示解决方案",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "bff10883-0285-42ec-8952-9c8b924363dc",
+                        "title": "proxy和agent从以下版本开始支持下面方案隐藏命令行参数执行脚本\n- 0.10.20及以上\n- 0.11.7及以上\n- 0.12.1及之后所有版本\n\n\n- 方案一，通过环境变量给脚本参数，推荐使用，该方案兼容性强：    \n    使用方式，监控项key需要包含`env`关键字，可通过脚本名的前缀或后缀加入该关键字，如：`envScriptName.sh`或`script_name_env.sh`   \n    加入关键字之后参数将改为从环境变量传入，取参需要从环境变量获取，变量名为`SNC_PARAM1`，其中1为参数下标。   \n    如key：script.envScriptName.sh[script,envScriptName.sh,value1,value2,value3]   \n    脚本取参：\n    ```shell\n    echo \"param1=$SNC_PARAM1\"  # $SNC_PARAM1为第一个参数，值为value1\n    echo \"param2=$SNC_PARAM2\"  # $SNC_PARAM2为第一个参数，值为value3\n    echo \"param3=$SNC_PARAM3\"  # $SNC_PARAM2为第一个参数，值为value3\n    ```\n\n- 方案二，程序通过exec方式执行脚本，不显示脚本的执行命令，只支持linux下的shell脚本和python脚本：    \n    使用方式，监控项key需要包含`hide`关键字，可通过脚本名的前缀或后缀加入该关键字，如：`hideScriptName.sh`或`script_name_hide.sh`   \n    加入关键字之后脚本的执行方式改为用exec方式执行，该方式执行脚本通过ps无法查看脚本的执行参数。   \n    如key：script.hiddenScriptName.sh[script,hiddenScriptName.sh,value1,value2,value3]   \n\n- 方案三，通过配置全局开启方案二的方式，即脚本名称无需包含`hide`关键字默认以exec方式执行，开启后跟方案二执行逻辑一样：    \n    proxy或agent添加配置：`<proxy|agent>.monitor.script.executeHidden=true`"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "id": "4f04d876-e7c8-4433-a016-64951ff34ac1",
+            "title": "运维操作功能常见问题，适用于排查自动化运维操作和CMDB自发现任务等问题",
+            "children": {
+              "attached": [
+                {
+                  "id": "eec802d7-777b-46e4-bbc5-f8402159400a",
+                  "title": "运维操作功能都会由发起方先生成一个操作任务，该任务会指定一个全局唯一任务ID再下发给proxy或agent执行，所以可以根据该任务ID查询日志进行问题点定位。"
+                },
+                {
+                  "id": "9d1c8e0c-f75b-4c2e-989b-a7d3aab05c57",
+                  "title": "一、初步定位问题",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "b7a832cb-e606-4e6a-a525-1a68c3dd8710",
+                        "title": "1、任务ID查询\n任务ID都是由发起方生成的（即功能的开发方，如自动化运维和CMDB），如果在下面方式中未能找到任务ID，请联系功能开发者咨询如何获取到对应的任务ID。\n- 自动化运维的任务ID查询\n  - 自动化运维有很多功能都会生成运维操作，一般都会在日志里面输出任务ID，在执行对应功能之后自动化运维服务的日志中查找任务ID。\n- CMDB自发现的任务ID查询\n  1. 打开浏览器控制台（可按F12键打开）\n  2. 进入执行日志详情页面，然后在控制台找到请求地址：/snc-cmdb-discovery/discovery/log/getExecuteLogPage\n  3. 该地址返回该任务的全部执行记录，找到对应的需要排查执行记录数据，记录数据中的`ipLogId`和`scriptLogId`字段就是对应的任务ID了。\n\n2、根据任务ID进行问题定位\n运维操作任务执行流程如下，使用任务ID按下面流程搜索对应服务的日志进行初步定位问题点出现在哪个服务，再找到对应的服务负责人进行进一步的排查。\n- 任务执行对象是snc-ng-proxy的流程：\n    发起方 -> snc-ng-server -> kafka(下发topic) -> snc-ng-proxy -> kafka（返回topic） -> 发起方\n- 任务执行对象是snc-ng-agent的流程：\n    发起方 -> snc-ng-server -> kafka(下发topic) -> snc-ng-proxy -> snc-ng-agent -> snc-ng-proxy -> kafka（返回topic） -> 发起方\n- 执行流程的节点搜索日志说明\n  - 发起方：即功能所属的服务，根据功能查询到对应的任务ID。\n  - snc-ng-server：接收任务并根据任务支持对象将任务下发到proxy或agent执行，如果INFO级别未搜索到任务ID相关日志，可尝试开启DEBUG级别日志之后再重试和搜索日志。\n  - kafka(下发topic)：找到任务执行对象所属的proxy集群，集群topic为下发topic，或者查集群下任意proxy的配置里面的topic也可以，根据任务ID搜索该topic可以获取任务参数。\n  - snc-ng-proxy：\n    - 执行对象为proxy时，直接查对应proxy日志。\n    - 执行对象为agent时，则需要查proxy集群下所有proxy的日志，并且查是否有下发给agent的日志和返回topic数据的日志。\n  - snc-ng-agent：执行对象为agent时，直接查对应agent日志。\n  - kafka（返回topic）：\n    - 自动化运维一般是`dcp_realTime_result`。\n    - CMDB自发现任务是`cmdb_dcp_realTime_result`。\n    - 如果不是这两个topic，可以在下发topic里面找到的任务参数里面查topic关键字看具体是哪个topic。\n- 根据上面的流程找出问题点，再找出问题服务的负责人做进一步的分析和排查。"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "ff3a8ab2-97fc-4da3-a932-798aff0c7960",
+                  "title": "十 插件问题",
+                  "children": {
+                    "attached": [
+                      {
+                        "id": "a53f6142-7e0b-4219-85a1-f2f831c1405f",
+                        "title": "- simple-check 使用ping 的时候,网络能够正常ping 通,但是通过插件的ping 功能 返回失败.\n    - 程序必须使用 root 运行,发送和接收原始套接字（raw sockets） 例如  ICMP,需要root 权限.\n    - 否则需要通过root 执行 一下命令  setcap cap_net_raw+ep /home/shsnc/jre/bin/java (程序启动的jre程序路径)"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "topic": {
+      "theme": {
+        "id": "default"
+      }
+    }
+  }
+]

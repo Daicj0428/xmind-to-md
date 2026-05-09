@@ -23,75 +23,87 @@ class DocxImporter(BaseImporter):
     
     def _parse_docx_content(self, doc: Document) -> TopicNode:
         """解析 Word 内容，构建树结构"""
-        # 查找第一个标题作为根节点
-        root_title = self.file_path.stem
-        nodes = []
+        # 收集标题和正文
+        headings = []  # (level, title, body_paragraphs)
+        current_body = []
         
         for para in doc.paragraphs:
+            text = para.text.strip()
+            if not text:
+                # 空行也保留作为正文的一部分
+                if current_body:
+                    current_body.append('')
+                continue
+            
+            # 检查是否是标题
             if para.style.name.startswith('Heading'):
-                # 提取标题级别
-                level = int(para.style.name.replace('Heading ', ''))
-                title = para.text.strip()
-                nodes.append((title, level))
+                try:
+                    level = int(para.style.name.replace('Heading ', ''))
+                    
+                    # 保存前一个标题的正文
+                    if headings:
+                        headings[-1] = (headings[-1][0], headings[-1][1], current_body)
+                    
+                    headings.append((level, text, []))
+                    current_body = []
+                except ValueError:
+                    # 不是标准标题格式，当作正文
+                    current_body.append(text)
+            else:
+                # 非标题段落，保存为正文
+                current_body.append(text)
         
-        # 如果没有找到标题，使用第一段作为根节点
-        if not nodes:
-            if doc.paragraphs:
-                root_title = doc.paragraphs[0].text.strip()
-        else:
-            root_title = nodes[0][0]
-            nodes = nodes[1:]  # 移除根节点
+        # 保存最后一个标题的正文
+        if headings and current_body:
+            headings[-1] = (headings[-1][0], headings[-1][1], current_body)
         
         # 创建根节点
-        root = TopicNode(title=root_title, level=0)
+        if headings:
+            root_level, root_title, root_body = headings[0]
+            root = TopicNode(title=root_title, level=0)
+            if root_body:
+                root.notes = '\n'.join(root_body).strip()
+            child_headings = headings[1:]
+        else:
+            # 没有标题，使用第一段作为根节点
+            root_title = doc.paragraphs[0].text.strip() if doc.paragraphs else self.file_path.stem
+            root = TopicNode(title=root_title, level=0)
+            child_headings = []
         
         # 构建树结构
-        if nodes:
-            self._build_tree_from_nodes(root, nodes)
+        if child_headings:
+            self._build_tree_with_body(root, child_headings)
         
         return root
     
-    def _build_tree_from_nodes(self, parent: TopicNode, nodes: list):
-        """根据节点列表构建树结构"""
-        if not nodes:
+    def _build_tree_with_body(self, parent: TopicNode, headings: list):
+        """根据节点列表构建树结构，正文作为子节点添加"""
+        if not headings:
             return
         
-        i = 0
-        while i < len(nodes):
-            title, level = nodes[i]
-            
-            # 创建新节点
+        node_stack = [(parent, 0)]  # (node, level)
+        
+        for level, title, body_paras in headings:
+            # 创建标题节点
             new_node = TopicNode(title=title, level=level)
             
-            # 如果是一级节点，添加到根节点
-            if level == 1:
-                parent.add_child(new_node)
-                # 递归构建子节点
-                children = []
-                j = i + 1
-                while j < len(nodes) and nodes[j][1] > level:
-                    children.append(nodes[j])
-                    j += 1
-                
-                if children:
-                    self._build_tree_from_nodes(new_node, children)
-                
-                i = j
+            # 添加正文作为子节点（如果有）
+            if body_paras:
+                body_text = '\n'.join(body_paras).strip()
+                if body_text:
+                    # 将正文内容直接作为子节点标题
+                    body_node = TopicNode(title=body_text, level=level + 1)
+                    new_node.add_child(body_node)
+            
+            # 找到正确的父节点
+            while node_stack and node_stack[-1][1] >= level:
+                node_stack.pop()
+            
+            if node_stack:
+                parent_node = node_stack[-1][0]
+                parent_node.add_child(new_node)
             else:
-                # 查找父节点
-                parent_node = self._find_parent_by_level(parent, level)
-                if parent_node:
-                    parent_node.add_child(new_node)
-                i += 1
-    
-    def _find_parent_by_level(self, node: TopicNode, target_level: int) -> TopicNode:
-        """根据级别查找父节点"""
-        if node.level == target_level - 1:
-            return node
-        
-        for child in reversed(node.children):
-            result = self._find_parent_by_level(child, target_level)
-            if result:
-                return result
-        
-        return None
+                parent.add_child(new_node)
+            
+            # 将新节点压入栈
+            node_stack.append((new_node, level))

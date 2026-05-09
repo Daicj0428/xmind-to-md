@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: xmind-to-md-metrics
+  namespace: monitoring
+  labels:
+    app: xmind-to-md
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - default
+      - xmind-to-md
+  selector:
+    matchLabels:
+      app: xmind-to-md
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      honorLabels: true

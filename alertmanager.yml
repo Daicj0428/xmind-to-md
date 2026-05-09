@@ -1,9 +1,9 @@
 global:
-  smtp_smarthost: 'smtp.qiye.163.com:465'   # 协议
+  smtp_smarthost: 'smtp.qiye.163.com:465'
   smtp_require_tls: true
-  smtp_from: '发件人信息 姓名<邮箱地址>'
-  smtp_auth_username: '发件人邮箱地址'
-  smtp_auth_password: 'SMTP授权码'
+  smtp_from: 'daichangjiang <daichangjiang_xa@shsnc.com>'
+  smtp_auth_username: 'daichangjiang_xa@shsnc.com'
+  smtp_auth_password: 'cL7May@$GLTWdL%S'
 
 route:
   receiver: 'email-notice'
@@ -24,7 +24,7 @@ route:
 receivers:
 - name: 'email-notice'
   email_configs:
-  - to: '收件人邮箱'
+  - to: 'daicj17623117750@163.com'
     send_resolved: true
     headers:
       Subject: '[XMind-MD告警] {{ .GroupLabels.alertname }}'

@@ -96,6 +96,8 @@ docker run -p 30001:30001 -e PORT=30001 xmind-to-md:latest
 
 ### Kubernetes 部署
 
+#### 基础部署
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -129,6 +131,40 @@ spec:
         emptyDir: {}
       - name: output-volume
         emptyDir: {}
+```
+
+#### Prometheus 监控自动发现 (ServiceMonitor)
+
+在 K8s 集群中使用 Prometheus Operator 时，创建 Service 和 ServiceMonitor 实现自动指标采集：
+
+**1. 创建 Service**
+
+```bash
+kubectl apply -f k8s-service.yaml
+```
+
+**2. 创建 ServiceMonitor**
+
+```bash
+kubectl apply -f servicemonitor.yaml
+```
+
+**配置文件说明：**
+
+| 文件 | 用途 |
+|------|------|
+| `k8s-service.yaml` | 暴露服务的 HTTP 和 metrics 端口 |
+| `servicemonitor.yaml` | Prometheus Operator 自动发现配置 |
+
+**验证监控：**
+
+```bash
+# 查看 ServiceMonitor
+kubectl get servicemonitor -n monitoring
+
+# 查看 Prometheus 目标
+kubectl port-forward svc/prometheus-k8s 9090:9090 -n monitoring
+# 访问 http://localhost:9090/targets 查看 xmind-to-md 是否已注册
 ```
 
 ## Prometheus 监控

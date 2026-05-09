@@ -114,7 +114,7 @@
       "title": "转换成功率",
       "targets": [
         {
-          "expr": "sum(rate(xmind_conversions_total{status=\"success\"}[5m])) by (format)",
+          "expr": "sum(rate(xmind_conversions_total{status=\"success\"}[5m])) / sum(rate(xmind_conversions_total[5m]))",
           "legendFormat": "{{format}}"
         }
       ],
